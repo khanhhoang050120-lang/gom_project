@@ -39,6 +39,8 @@ Thư mục gồm:
 | `chung.py` | thư viện dùng chung — **thiếu file này là không chạy được** |
 | `toi_uu_dung_luong.py` | chế độ 4 (tối ưu dung lượng) |
 | `canh_gac.py` | canh gác phát hiện treo trên ổ mạng — chỉ cảnh báo, không tự dừng |
+| `loi/` | lõi dùng chung (xác định thư mục gốc khi đóng gói) — **thiếu là không chạy được** |
+| `ui/` | cầu nối giao diện ↔ lõi và các phép kiểm đầu vào — **thiếu là không mở được giao diện** |
 | `xem_tien_trinh.py` | cửa sổ theo dõi tiến độ, chạy song song |
 | `cau_hinh.json` | tuỳ chọn — xoá đi thì dùng giá trị mặc định |
 | `python/` | **bản Python đi kèm — thiếu thư mục này thì phải có Python trên máy** |
@@ -177,6 +179,7 @@ công cụ **không** kết luận "ĐỦ".
 | Mục | Vì sao không sao |
 |---|---|
 | `TU KIEM - anh bia/thumbnail hong` | Chỉ xấu giao diện CapCut, không mất hình. |
+| `TOI UU - segment DA LECH SAN trong draft goc` | Đoạn dùng đã vượt độ dài clip **ngay trong project gốc**, trước khi gói. CapCut tự ghi như vậy. Công cụ không gây ra, và mang sang máy khác cũng không tệ hơn bản gốc. |
 | `FILE .json cache doc loi` | File cache CapCut tự sinh. Không liên quan timeline. |
 | `TOI UU - clip ma lai that bai` | Đã **giữ nguyên bản gốc** — không mất hình, chỉ là gói to hơn. |
 | `TOI UU - clip KHONG dua vao ma lai` | Clip dài quá ngưỡng hoặc không tìm thấy nguồn để nén. Giữ nguyên bản gốc. |
@@ -301,7 +304,7 @@ mặc định**, không chết.
 
 ## 6. Dành cho người bảo trì
 
-- **`bug.md` là nhật ký lỗi** — 102 mục, mỗi mục có Triệu chứng → Nguyên nhân gốc
+- **`bug.md` là nhật ký lỗi** — 104 mục, mỗi mục có Triệu chứng → Nguyên nhân gốc
   → Cách sửa → Cách kiểm chứng → Bài học. Đọc phần **"Checklist nhanh"** ở cuối
   trước khi sửa bất kỳ dòng code nào.
 - **`CLAUDE.md`** ghi quy tắc bắt buộc, gồm cả cách làm việc khi nhiều người cùng

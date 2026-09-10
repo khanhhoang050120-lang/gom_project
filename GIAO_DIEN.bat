@@ -31,6 +31,13 @@ if not exist "%~dp0giao_dien.py" set "THIEU=%THIEU% giao_dien.py"
 if not exist "%~dp0goi_project_capcut.py" set "THIEU=%THIEU% goi_project_capcut.py"
 if not exist "%~dp0chung.py" set "THIEU=%THIEU% chung.py"
 if not exist "%~dp0tu_kiem_lan_dau.py" set "THIEU=%THIEU% tu_kiem_lan_dau.py"
+REM  Package con: `giao_dien.py` import chung ngay luc nap. Thieu MOT file la
+REM  ModuleNotFoundError duoi pythonw - im lang hoan toan. Phai kiem o day,
+REM  neu khong thi phep kiem Python ben duoi se ket luan nham la "Python hong"
+REM  va nguoi dung di cai lai Python trong khi loi la chep thieu thu muc.
+if not exist "%~dp0loi\phien_ban.py" set "THIEU=%THIEU% loi\phien_ban.py"
+if not exist "%~dp0ui\cau_noi.py" set "THIEU=%THIEU% ui\cau_noi.py"
+if not exist "%~dp0ui\kiem_dau_vao.py" set "THIEU=%THIEU% ui\kiem_dau_vao.py"
 if not "%THIEU%"=="" goto :thieu_file
 
 REM --- 2) Ban Python DI KEM: khong can cai, khong can admin, khong dung PATH -

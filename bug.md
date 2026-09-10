@@ -1966,6 +1966,67 @@ def main\(\):)` để cắt hàm cũ. Nó **nuốt luôn 11 hàm** nằm giữa.
   - **Một bộ kiểm báo động giả và một bộ kiểm bỏ sót thường là CÙNG một lỗi nhìn từ hai phía.** Sửa xong phải kiểm cả hai chiều: nó hết kêu oan chưa, VÀ nó có thật sự quét thứ mới không. Chỉ kiểm chiều thứ nhất thì rất dễ "sửa" bằng cách nới điều kiện cho qua.
   - Chuyển từ **module phẳng** sang **package** làm hỏng mọi chỗ dò file bằng `glob("*.py")` ở gốc. Trước khi tách package, tìm hết các chỗ đó.
 
+### 103. `_EXIST_CACHE` dính giữa các lần chạy `main()` — chặn hàng đợi nhiều project
+- **Ngày:** 2026-09-10
+- **Mức độ:** 🔴 High (hỏng im lặng, cả hai chiều; chỉ lộ ra khi chạy nhiều project trong một tiến trình)
+- **Vị trí:** `toi_uu_dung_luong.py` — `_EXIST_CACHE` / `_exists()`.
+
+**Triệu chứng:** chưa xảy ra trên bản đang dùng. Phát hiện khi đánh giá khả năng làm hàng đợi nhiều project. **Đo thực nghiệm:**
+
+```
+_exists(f) -> False        (file chưa tạo)
+[tạo file thật]
+_exists(f) -> False        SAI - vẫn trả kết quả cũ
+_exists(g) -> True         (file có thật)
+[xoá file]
+_exists(g) -> True         SAI - dính cả chiều ngược
+```
+
+**Nguyên nhân gốc:** `_EXIST_CACHE` là dict toàn cục **không có ai xoá**. Hai cache anh em đều có: `_PROBE_CACHE` có `xoa_cache_probe()` (gọi trong `optimize_package()`), `_LOI_PROBE` tự dọn trong `lay_loi_probe()`. Riêng cái này bị sót.
+
+Ở chế độ dòng lệnh và giao diện một project, **mỗi lần gói là một tiến trình mới** nên cache chết theo tiến trình — không ai thấy vấn đề. Hàng đợi nhiều project gọi `main()` nhiều lần trong **cùng một tiến trình**: project sau thừa hưởng cache project trước → **báo thiếu file oan** (file đã có mà bảo không), hoặc **copy thất bại** (file đã xoá mà bảo còn).
+
+**Cách sửa:** thêm `xoa_cache_ton_tai()` và gọi ở đầu `main()` — nơi **mọi** lần chạy đều đi qua — cùng với `xoa_cache_probe()`. Bọc `try/except` để thiếu module tối ưu không chặn chế độ 1.
+
+- **Cách kiểm chứng:**
+  - `tests\test_hang_doi.py` → 14 PASS / 0 FAIL. Chốt cả hai chiều dính, chốt `xoa_cache_ton_tai()` **không được là code chết**, chốt cảnh gác vẫn tắt trong `finally`.
+  - E2E thật: gọi `main()` **hai lần liên tiếp trong một tiến trình** trên hai draft giả → cả hai ra **6 file, 5670 KB** giống hệt nhau.
+- **Bài học:**
+  - **"Mỗi lần chạy là một tiến trình mới" là một giả định ngầm, không phải sự thật vĩnh viễn.** Nó đúng với dòng lệnh, và che giấu mọi trạng thái toàn cục cho tới ngày có ai đó gọi hàm hai lần. Trước khi thêm tính năng chạy-nhiều-lần, phải **liệt kê hết biến toàn cục** và hỏi từng cái: "ai xoá mày?".
+  - **Cache có anh em thì kiểm cả họ.** Ở đây ba cache cùng loại, hai cái có đường dọn, một cái không — chính sự không đồng đều đó là dấu hiệu bỏ sót, dễ thấy hơn là soi từng cái riêng lẻ.
+  - Người viết code **đã lường trước** kịch bản này ở chỗ khác: `main()` bọc `_main_than()` trong `try/finally` để tắt cảnh gác, với ghi chú nói rõ *"ở chế độ GIAO DIEN thì `main()` trả về mà tiến trình VẪN SỐNG"*. Cùng một suy nghĩ, chỉ sót một biến.
+
+### 104. Báo "CÒN THIẾU" oan vì không phân biệt lệch DO GÓI với lệch VỐN CÓ
+- **Ngày:** 2026-09-10
+- **Mức độ:** 🔴 High (báo cáo sai kết quả — người dùng đi tìm một lỗi không tồn tại, và có thể vứt một gói tốt)
+- **Vị trí:** `toi_uu_dung_luong.verify_optimize()`.
+
+**Triệu chứng:** gói DS1_124 xong, mọi chỉ số đều tốt — `THIEU: 0`, `COPY THAT BAI: 0`, giảm 94,42 GB, 1092 clip xử lý 0 thất bại — nhưng kết luận cuối lại là **`=> CON THIEU. XEM _BAO_CAO_THIEU.txt, bo sung roi chay lai.`** Nguyên nhân: 3 segment bị báo `BI LECH sau khi cat gon`.
+
+**Nguyên nhân gốc:** cả 3 dòng là **cùng một material** (`8B4163E9`) lặp ở 3 file JSON. Đo thực tế:
+
+| | duration | đoạn dùng | vượt |
+|---|---|---|---|
+| Draft **gốc** | 30,700s | 5,600 → 30,800s | **+0,100s** |
+| Bản **gói** | 25,592s | 0,500 → 25,700s | **+0,108s** |
+
+Đoạn dùng giữ **nguyên 25,200s** ở cả hai bên, offset dịch 5,600 → 0,500 (đệm 0,5s đầu) — **cắt hoàn toàn đúng**. Lệch tăng đúng **8 mili giây**, do `duration` của material đổi từ 30,700s xuống 25,592s (độ dài bản `_opt` thật) trong khi lệch gốc đã có sẵn.
+
+Nói cách khác: **CapCut tự nó đã ghi lệch từ trước**, tool chỉ làm con số lệch nhích thêm 8ms rồi vượt ngưỡng. `verify_package()` đã có tham số `draft_dir` để loại trừ đúng loại "hỏng sẵn" này, nhưng `verify_optimize()` thì không.
+
+**Cách sửa:** thêm `draft_dir` cho `verify_optimize()`; material nào **đã lệch sẵn** ở draft gốc thì xếp riêng vào `lech_san` (chỉ ghi nhận) thay vì `bad` (chặn kết luận).
+
+**Một bẫy trong chính bản vá — ngưỡng phải THẤP hơn:** lần vá đầu tôi dùng cùng ngưỡng `> d + 100_000` cho cả hai hàm, và bản vá **không có tác dụng gì**: draft gốc lệch **đúng bằng** 100_000µs, tức `30800000 > 30800000` là `False` — nó vừa **lọt** qua phép kiểm. Phải hạ xuống `>= d + 90_000` thì mới nhận ra được. Dùng đúng một ngưỡng cho "phát hiện lỗi" và "nhận ra lỗi vốn có" là bản vá vô dụng.
+
+- **Cách kiểm chứng:** trên dữ liệu THẬT (gói DS1_124 vừa chạy):
+  - không truyền `draft_dir` → `bad = 3`, `lech_san = 0` (hành vi cũ, kết luận sai)
+  - có truyền `draft_dir` → `bad = 0`, `lech_san = 3` (kết luận đúng)
+  - `tests\test_lech_von_co.py` — chốt cả hai chiều và chốt cái bẫy ngưỡng.
+- **Bài học:**
+  - **"Hỏng sẵn từ trước" và "ta làm hỏng" là hai chuyện khác nhau, và chỉ phân biệt được khi ĐỐI CHIẾU VỚI BẢN GỐC.** `verify_package` đã học bài này (2325/2366 tham chiếu hỏng là cache CapCut tự sinh); `verify_optimize` thì chưa — cùng một bài học phải áp cho MỌI phép nghiệm thu, không chỉ cái đầu tiên.
+  - **Một chỉ số xấu duy nhất kéo tụt cả kết luận thì phải soi nó trước khi tin.** Ở đây 3 dòng lệch làm hạ kết luận của một gói có 0 thiếu, 0 copy lỗi, 0 clip mã hỏng.
+  - Khi một bản vá "không có tác dụng gì", **nghi ngưỡng/điều kiện biên trước khi nghi logic** — `>` và `>=` khác nhau đúng một trường hợp, và trường hợp đó lại chính là dữ liệu thật.
+
 ---
 
 ## Checklist nhanh khi viết/sửa code (rút ra từ các bug trên)

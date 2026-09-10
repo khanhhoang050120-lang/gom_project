@@ -999,6 +999,19 @@ def main(tuy_chon=None):
     # tiep tuc lay mau va sau 5 phut giao dien nam im se in "CANH BAO khong
     # thay tien trien" - mot bao dong khong, dung loai lam nguoi dung het tin.
     _giu_gac = []
+    # XOA BO NHO DEM cua lan chay TRUOC. Bat buoc khi `main()` duoc goi NHIEU
+    # LAN trong CUNG mot tien trinh (hang doi nhieu project): project sau se
+    # thua huong cache cua project truoc -> bao THIEU FILE oan, hoac tuong file
+    # da xoa van con. Ca hai deu im lang. Xem `xoa_cache_ton_tai()`.
+    # O che do dong lenh moi lan chay la mot tien trinh moi nen khong anh huong.
+    try:
+        _TU = import_toi_uu()
+        _TU.xoa_cache_ton_tai()
+        _TU.xoa_cache_probe()
+    except Exception:
+        # Thieu module toi uu KHONG duoc chan lan chay - che do 1 (copy nguyen)
+        # van dung duoc. `kiem_tien_de()` da bao ro chuyen thieu file roi.
+        pass
     try:
         return _main_than(tuy_chon, _giu_gac)
     finally:
@@ -1608,6 +1621,7 @@ def _main_than(tuy_chon, _giu_gac):
 
     # --- MUC 4c: bo file thua (chay SAU khi viet lai xong moi biet cai gi con dung) ---
     opt_bad = []
+    opt_lech_san = []       # lech VON CO trong draft goc - chi ghi nhan, khong chan
     goc_thua = []
     # Moi bo kiem CHET deu phai ghi vao day. Danh sach nay khong rong = KHONG duoc
     # ket luan "DU", vi ta khong con bang chung nao ca (checklist bug.md: mac dinh CHUA XONG).
@@ -1640,11 +1654,17 @@ def _main_than(tuy_chon, _giu_gac):
         print("\nDang tu kiem rieng phan toi uu (doan dung co lech khong)...")
         opt_verify_ok = False
         try:
-            opt_bad = TU.verify_optimize(out_dir)
+            # Truyen `draft_dir` de phan biet lech DO TA GAY RA voi lech VON CO
+            # trong draft goc (bug #104). Cung cach lam nhu `verify_package`.
+            opt_bad, opt_lech_san = TU.verify_optimize(out_dir, draft_dir)
             opt_verify_ok = True
         except Exception as ex:
             verify_loi.append(f"verify_optimize: {type(ex).__name__}: {ex}")
             print(f"  ! TU KIEM TOI UU THAT BAI (khong the ket luan OK): {ex}")
+        if opt_lech_san:
+            # Ghi nhan, KHONG canh bao to: khong phai loi cua lan gom nay.
+            print(f"  (i) {len(opt_lech_san)} segment da lech san trong draft GOC"
+                  f" - khong phai do goi, mang sang may khac khong te hon ban goc")
         if opt_bad:
             print(f"  ! {len(opt_bad)} segment BI LECH sau khi cat gon -> XEM BAO CAO")
         elif not opt_verify_ok:
@@ -1760,6 +1780,9 @@ def _main_than(tuy_chon, _giu_gac):
                          " (da BO QUA viec xoa file mo coi cho an toan):",
                          [f"{a}  <-- {b}" for a, b in opt_clean[3]])
             f.write(f"Segment BI LECH sau khi cat: {len(opt_bad)}\n")
+            if opt_lech_san:
+                f.write(f"Segment da lech SAN trong draft goc"
+                        f" (khong phai do goi): {len(opt_lech_san)}\n")
         f.write("\n")
 
         sect("THIEU - khong gom duoc (bo sung roi chay lai):",
@@ -1801,6 +1824,9 @@ def _main_than(tuy_chon, _giu_gac):
 
         sect("TOI UU - SEGMENT BI LECH (hinh se sai, PHAI xu ly):",
              [f"{j} | material {m} | {r}" for j, m, r in opt_bad])
+        sect("TOI UU - segment DA LECH SAN trong draft goc"
+             " (KHONG phai do goi, chi de biet):",
+             [f"{j} | material {m} | {r}" for j, m, r in opt_lech_san])
         sect("TOI UU - clip ma lai that bai (da giu nguyen ban goc, khong mat hinh):",
              [f"{a}  <-- {b}" for a, b in (opt_stat["fail"] if opt_stat else [])])
 

@@ -129,6 +129,7 @@ class GiaoDien:
         self._nhip = None         # id cua `after` nhip dap - phai huy khi dong
         self._lap = {}            # dem cau hoi lap lai -> chan vong lap vo han
         self._bo_tra_loi = None   # `ui.cau_noi.TraLoi`, dung khi bat dau chay
+        self._cs_hd = None        # cua so hang doi (Toplevel), mo khi can
 
         # Duoi pythonw moi loi trong callback deu IM LANG (stderr la ho den).
         # Khong co luoi nay thi "nut bam khong lam gi ca" - dung trieu chung
@@ -273,6 +274,10 @@ class GiaoDien:
         self.nut_copy.pack(side="left")
         self.v_trangthai = tk.StringVar(master=self.root, value="San sang.")
         ttk.Label(h6, textvariable=self.v_trangthai).pack(side="left", padx=12)
+        # Hang doi nhieu project - mot cua so RIENG. De ben phai de khong lan
+        # voi luong mot-project o ben trai.
+        ttk.Button(h6, text="Hang doi nhieu project...",
+                   command=self._mo_hang_doi).pack(side="right")
 
         # --- Nhat ky ---
         for _o in (self.e_draft, self.e_out, self.e_do):
@@ -616,6 +621,45 @@ class GiaoDien:
             except Exception:
                 pass
             builtins.input, sys.stdout = cu_in, cu_out
+
+    def _mo_hang_doi(self):
+        """Mo cua so hang doi nhieu project.
+
+        Cua so RIENG (`tk.Toplevel`) chu khong thay the cua so nay: nguoi dung
+        quen luong mot-project van dung nguyen duoc.
+        """
+        if getattr(self, "_cs_hd", None) is not None:
+            try:
+                if self._cs_hd.root.winfo_exists():
+                    self._cs_hd.root.lift()
+                    return
+            except tk.TclError:
+                pass
+            self._cs_hd = None
+        try:
+            from ui.chay_hang_doi import chay_mot_project
+            from ui.cua_so_hang_doi import CuaSoHangDoi
+        except ImportError as ex:
+            messagebox.showerror(
+                "Thieu file",
+                f"Khong nap duoc phan hang doi:\n  {ex}\n\n"
+                "Co ve ban chep thieu thu muc `ui/`. Hay chep LAI CA THU MUC"
+                " cong cu.", parent=self.root)
+            return
+
+        cua = tk.Toplevel(self.root)
+        # CHUP tuy chon muc 4 NGAY BAY GIO, tren THREAD CHINH: hang doi chay o
+        # thread phu va khong duoc goi `.get()` cua bien tkinter (SPEC muc 6.1).
+        tc = {
+            "trim": bool(self.v_trim.get()),
+            "scale": bool(self.v_scale.get()),
+            "cleanup": bool(self.v_clean.get()),
+            "do": self._lam_sach_ds_duong_dan(self.v_do.get()),
+        }
+        self._cs_hd = CuaSoHangDoi(
+            cua,
+            chay_mot=lambda m, nd: chay_mot_project(m, nd, G),
+            tuy_chon_mac_dinh=tc)
 
     def _tien_hanh(self):
         self.tra_loi_tien_hanh = "y"

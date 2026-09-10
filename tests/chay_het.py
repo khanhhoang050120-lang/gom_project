@@ -30,11 +30,15 @@ BO_KIEM = [
     ("A2..A6   don dep khong xoa nham / tu choi module gia", "test_don_dep.py", 180),
     ("DEM      bo dem khop viec that su da lam", "test_dem.py", 300),
     ("#38      mot nguon nhieu ban _opt / ban goc thua", "test_ban_goc_thua.py", 300),
+    ("#104     lech VON CO trong draft goc vs lech DO GOI", "test_lech_von_co.py", 60),
     ("ON DINH  race / ghi atomic / o mang / cau hinh", "test_on_dinh.py", 240),
     ("DONG GOI E2 ffmpeg di kem / G1 kiem tien de", "test_dong_goi.py", 300),
     ("PHIEN BAN thu muc goc + noi ghi khi dong goi .exe", "test_phien_ban.py", 60),
     ("CAU NOI  bang dich cau hoi -> dap an (khong can tkinter)", "test_cau_noi.py", 60),
     ("KIEM DAU VAO  10 phep kiem muc 1-4 (khong can tkinter)", "test_kiem_dau_vao.py", 60),
+    ("HANG DOI  goi main() nhieu lan trong mot tien trinh", "test_hang_doi.py", 60),
+    ("HANG DOI UI  dieu phoi nhieu project (khong can tkinter)", "test_hang_doi_ui.py", 60),
+    ("HANG DOI LOG  ghi log ra ngoai + gioi han nhat ky", "test_hang_doi_log.py", 60),
     ("NUOT LOI ep copy/link that bai (nhom #4,5,11,17,20)", "test_nuot_loi.py", 400),
     ("XEM TIEN TRINH  _fmt_time / do dung luong / chay that", "test_xem_tien_trinh.py", 200),
     ("HIEU NANG  moi truong dem / cache probe", "test_hieu_nang.py", 200),
@@ -57,6 +61,8 @@ BO_KIEM = [
     ("CANH GAC phat hien treo NAS ma khong bao dong gia",
      "test_canh_gac.py", 300),
     ("E2E      luong that tren draft gia + ep loi", "test_e2e.py", 600),
+    ("HANG DOI E2E  gom nhieu project that trong mot tien trinh",
+     "test_hang_doi_e2e.py", 900),
 ]
 
 

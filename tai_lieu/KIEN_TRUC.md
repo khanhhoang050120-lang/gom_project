@@ -241,3 +241,29 @@ Lý do:
 Khi chưa đóng gói cả ba trùng nhau — đó là lý do bug này ẩn được tới giờ.
 
 **Hai bug phát sinh trong lúc làm**, đã ghi `bug.md` #101 và #102. Cả hai đều do bộ kiểm bắt được chứ không phải đọc code ra — bằng chứng cho quy tắc "chạy test trước và sau mỗi khối việc".
+
+---
+
+## 10. Đã làm — giai đoạn C: hàng đợi nhiều project (2026-09-10)
+
+**Chưa commit** theo yêu cầu chủ dự án.
+
+| Module | Dòng | Trách nhiệm |
+|---|---|---|
+| `ui/hang_doi.py` | 212 | Trạng thái + điều phối. Không biết gì về tkinter lẫn `main()` |
+| `ui/chay_hang_doi.py` | 109 | Chỗ **duy nhất** chạm vào lõi — gọi `G.main()` một lần/project |
+| `ui/cua_so_hang_doi.py` | 289 | Chỉ dựng giao diện, không quyết định gì |
+
+Ba lớp tách bạch nên `HangDoi` kiểm được bằng hàm giả (30 phép kiểm, không cần tkinter, không cần gom thật), còn `chay_hang_doi` kiểm bằng E2E gom thật (13 phép kiểm).
+
+### Nguyên tắc §1 được giữ thế nào
+
+`ui/chay_hang_doi.py` gọi `G.main()` **đúng một lần** cho mỗi project, lái qua `builtins.input` bằng chính `TraLoi` mà giao diện chính dùng. Khác biệt duy nhất: `cho_tien_hanh` là một Event giả luôn ở trạng thái đã đầy, vì cả hàng đợi đã được duyệt một lần trước khi chạy — không có người ngồi bấm "TIẾN HÀNH COPY" cho từng project.
+
+Nếu lớp này tự gọi `collect_refs`, `plan_package`... thì mọi bản vá logic sau này phải sửa hai nơi, và hai nơi sẽ trôi khỏi nhau. Đó đúng là cái bẫy mà §1 sinh ra để tránh.
+
+### Điều kiện tiên quyết đã phải sửa trước
+
+`_EXIST_CACHE` dính giữa các lần chạy (`bug.md` #103). Ở chế độ một-project mỗi lần gói là một tiến trình mới nên không ai thấy; hàng đợi gọi `main()` nhiều lần trong cùng tiến trình thì project sau thừa hưởng cache project trước.
+
+**Bài học chung:** *"mỗi lần chạy là một tiến trình mới"* là giả định ngầm, không phải sự thật vĩnh viễn. Trước khi thêm tính năng chạy-nhiều-lần, phải liệt kê hết biến toàn cục và hỏi từng cái *"ai xoá mày?"*.

@@ -267,6 +267,29 @@ def _exists(p) -> bool:
     return v
 
 
+def xoa_cache_ton_tai():
+    """Xoa bo nho dem `_exists`. PHAI goi o dau MOI lan chay `main()`.
+
+    Vi sao can (do that, 2026-09-10):
+        _exists(f) -> False        (file chua tao)
+        [tao file that]
+        _exists(f) -> False        SAI - van tra ket qua cu
+        _exists(g) -> True         (file co that)
+        [xoa file]
+        _exists(g) -> True         SAI - dinh ca chieu nguoc
+
+    O che do dong lenh va giao dien MOT project, moi lan goi la mot TIEN TRINH
+    moi nen cache chet theo tien trinh - khong ai thay van de. Nhung hang doi
+    NHIEU project goi `main()` nhieu lan trong CUNG mot tien trinh: project sau
+    thua huong cache cua project truoc -> bao THIEU FILE oan (file da co ma bao
+    khong), hoac COPY THAT BAI (file da xoa ma bao con). Ca hai deu im lang.
+
+    `_PROBE_CACHE` da co `xoa_cache_probe()`, `_LOI_PROBE` tu don trong
+    `lay_loi_probe()`. Rieng cai nay bi sot.
+    """
+    _EXIST_CACHE.clear()
+
+
 def resolve_material_file(path_str, base, draft_dir, out_dir, resolved):
     """Doi path trong JSON -> FILE NGUON that de doc (uu tien ban trong goi)."""
     if not path_str:
@@ -1364,10 +1387,71 @@ def prune_registry(out_dir, log=print):
     return removed, kept
 
 
-def verify_optimize(out_dir):
+def _lech_san_o_goc(draft_dir):
+    """Tap material_id DA lech san trong draft GOC (truoc khi goi).
+
+    Vi sao can: CapCut tu no ghi `source_timerange` vuot qua `duration` mot
+    chut (do that: +0.100s tren DS1_124). Do la lech VON CO, khong phai do
+    viec goi gay ra - mang sang may khac no cung khong te hon may goc.
+    Bao chung thanh "BI LECH sau khi cat gon" la BAO CAO SAI: nguoi dung se
+    di tim mot loi khong ton tai, va cau ket luan bi ha xuong "CON THIEU"
+    trong khi goi that su du.
+    """
+    ra = set()
+    if not draft_dir:
+        return ra
+    try:
+        cac_file = list(G.iter_json_files(draft_dir))
+    except Exception:
+        return ra
+    for jf in cac_file:
+        if jf.name not in G.CONTENT_NAMES:
+            continue
+        try:
+            c, _ = G.read_json_loose(jf)
+        except Exception:
+            continue          # doc khong duoc thi thoi, khong the ket luan gi
+        dur_of = {}
+        for cat in ("videos", "audios"):
+            for m in (c.get("materials", {}).get(cat) or []):
+                if isinstance(m, dict) and m.get("id"):
+                    dur_of[m["id"]] = int(m.get("duration") or 0)
+        for tr in (c.get("tracks") or []):
+            for sg in (tr.get("segments") or []):
+                mid, srt = sg.get("material_id"), sg.get("source_timerange")
+                if not mid or mid not in dur_of or not isinstance(srt, dict):
+                    continue
+                d = dur_of[mid]
+                if d <= 0:
+                    continue
+                s1 = int(srt.get("start") or 0) + int(srt.get("duration") or 0)
+                # NGUONG THAP HON `verify_optimize` (`>` thanh `>=`, va tru them
+                # mot chut). Ly do do duoc tren DS1_124: draft goc lech DUNG
+                # BANG 100_000us, tuc la vua LOT qua phep kiem `s1 > d+100_000`.
+                # Sau khi cat gon, `duration` cua material doi tu 30.700s xuong
+                # 25.592s (do dai ban _opt that) trong khi doan dung giu nguyen
+                # 25.200s -> lech thanh 108_000us va vuot nguong.
+                # Neu o day dung DUNG mot nguong voi `verify_optimize` thi lech
+                # von co KHONG BAO GIO nhan ra duoc, va ban va thanh vo dung.
+                if s1 >= d + 90_000:
+                    ra.add(mid)
+    return ra
+
+
+def verify_optimize(out_dir, draft_dir=None):
     """TU KIEM rieng cho pha toi uu: khong segment nao duoc tro ra ngoai do dai
-    material (dau hieu chac chan cua viec doi offset SAI -> hinh se bi lech)."""
+    material (dau hieu chac chan cua viec doi offset SAI -> hinh se bi lech).
+
+    `draft_dir`: neu truyen vao, material NAO DA LECH SAN trong draft goc se
+    duoc xep rieng - ta khong lam no lech, va no khong lam goi te hon ban goc.
+    Cung cach lam nhu `G.verify_package(out_dir, draft_dir)`.
+
+    Tra ve (bad, lech_san) - `bad` la loi THAT do goi gay ra (CHAN),
+    `lech_san` la lech von co (chi GHI NHAN).
+    """
+    lech_goc = _lech_san_o_goc(draft_dir)
     bad = []
+    lech_san = []
     for jf in G.iter_json_files(out_dir):
         if jf.name not in G.CONTENT_NAMES:
             continue
@@ -1395,7 +1479,11 @@ def verify_optimize(out_dir):
                 if s0 < 0:
                     bad.append((rel, mid, f"start am ({s0})"))
                 elif s1 > d + 100_000:          # cho sai so 0.1s
-                    bad.append((rel, mid,
-                                f"doan dung vuot do dai clip: het o {s1/US:.2f}s"
-                                f" nhung clip chi dai {d/US:.2f}s"))
-    return bad
+                    mo_ta = (f"doan dung vuot do dai clip: het o {s1/US:.2f}s"
+                             f" nhung clip chi dai {d/US:.2f}s")
+                    if mid in lech_goc:
+                        # DA lech san o draft goc -> khong phai loi cua ta.
+                        lech_san.append((rel, mid, mo_ta + " (DA LECH SAN o draft goc)"))
+                    else:
+                        bad.append((rel, mid, mo_ta))
+    return bad, lech_san

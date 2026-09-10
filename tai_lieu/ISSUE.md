@@ -63,7 +63,7 @@ Hậu quả nặng ở chỗ: mất `_LOI_GIAO_DIEN.log` là **mất đúng th�
 **Bước tiếp theo:** chọn nơi ghi theo người dùng (`%LOCALAPPDATA%`), làm cùng lúc với ISSUE-005 vì cùng đụng một hàm.
 
 ### ISSUE-007 `_EXIST_CACHE` dính giữa các lần chạy `main()` — chặn hướng C
-**Ngày:** 2026-09-10 · **Trạng thái:** MỞ · **Ưu tiên: CAO nếu chọn hướng C**
+**Ngày:** 2026-09-10 · **Trạng thái: ĐÓNG — đã sửa**
 
 Phát hiện khi đánh giá hướng C (hàng đợi nhiều project). **Đo thực nghiệm**, không suy luận:
 
@@ -88,6 +88,24 @@ sau khi XOA file  : _exists() = True        (SAI - cache dinh chieu nguoc)
 
 **Vì sao hướng C sẽ hỏng:** hàng đợi gọi `main()` nhiều lần trong **cùng một tiến trình**. Project sau thừa hưởng cache của project trước → báo **thiếu file oan** (file đã có mà bảo không), hoặc **copy thất bại** (file đã xoá mà bảo còn). Cả hai đều là lỗi im lặng — đúng họ lỗi nguy hiểm nhất mà `bug.md` cảnh báo.
 
-**Cách sửa:** thêm `xoa_cache_ton_tai()` và gọi ở đầu mỗi lần `main()` chạy. Rẻ, nhưng **bắt buộc phải làm trước** khi dựng hàng đợi. Có `tests/test_hieu_nang.py` đã canh `xoa_cache_probe()` không được thành code chết — nên thêm phép canh tương tự cho hàm mới.
+**Đã sửa:** thêm `xoa_cache_ton_tai()` và gọi ở đầu mỗi lần `main()` chạy. Rẻ, nhưng **bắt buộc phải làm trước** khi dựng hàng đợi. Có `tests/test_hieu_nang.py` đã canh `xoa_cache_probe()` không được thành code chết — nên thêm phép canh tương tự cho hàm mới.
 
 **Điểm cộng đã kiểm:** cảnh gác (`canh_gac.CanhGac`) **không** có vấn đề này — `main()` bọc `_main_than()` trong `try/finally` và luôn tắt cảnh gác kể cả khi thân hàm có 13 đường `return`. Ghi chú trong code nói rõ vỏ bọc này sinh ra chính vì "ở chế độ GIAO DIEN thì `main()` trả về mà tiến trình VẪN SỐNG". Tức là người viết đã lường trước việc chạy nhiều lần trong một tiến trình — chỉ sót `_EXIST_CACHE`.
+
+### ISSUE-008 Hàng đợi nhiều project (hướng C) — đã dựng, CHƯA commit
+**Ngày:** 2026-09-10 · **Trạng thái:** XONG — **để nguyên không commit** theo yêu cầu chủ dự án
+
+| Module | Dòng | Phép kiểm |
+|---|---|---|
+| `ui/hang_doi.py` | 212 | 30 (đơn vị) |
+| `ui/chay_hang_doi.py` | 109 | qua E2E |
+| `ui/cua_so_hang_doi.py` | 289 | qua E2E |
+| `tests/test_hang_doi_e2e.py` | — | 13 (gom thật) |
+
+**Giữ đúng nguyên tắc SPEC §1:** `ui/chay_hang_doi.py` gọi `G.main()` **đúng một lần** cho mỗi project, lái qua `builtins.input` giống hệt giao diện chính. Không tự gọi hàm con nào.
+
+**Một bug tự tìm ra khi làm:** `_ve_chi_tiet()` giữ bản sao `self._chon`, mà bản sao đó chỉ cập nhật lúc người dùng bấm → khung phải đứng im dù mục đang chạy. Sửa bằng cách bỏ bản sao, đọc thẳng từ Listbox mỗi lần cần. **Không có bản sao thì không có chuyện bản sao lệch với bản thật.**
+
+**Vào giao diện chính:** nút `Hang doi nhieu project...` ở hàng điều khiển, mở một `tk.Toplevel` riêng — luồng một-project giữ nguyên không đổi. Bấm lần hai thì nâng cửa sổ cũ lên chứ không tạo trùng.
+
+**Còn lại cho lần sau:** CI/CD GitHub Actions và auto-update (ISSUE-003), 7 thiếu sót UX ở `SPEC_UI_UX.md` §9.

@@ -48,6 +48,9 @@ FILE_BAT_BUOC = [
     "ui/__init__.py",
     "ui/cau_noi.py",
     "ui/kiem_dau_vao.py",
+    "ui/hang_doi.py",
+    "ui/chay_hang_doi.py",
+    "ui/cua_so_hang_doi.py",
     "ffmpeg/bin/ffmpeg.exe",
     "ffmpeg/bin/ffprobe.exe",
 ]

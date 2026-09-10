@@ -154,7 +154,11 @@ print("=" * 68)
 src = (ROOT / "goi_project_capcut.py").read_text(encoding="utf-8")
 
 check("verify_loi duoc khai bao truoc khoi kiem toi uu",
-      src.index("verify_loi = []") < src.index("opt_bad = TU.verify_optimize"),
+      # Bam Y NGHIA chu khong chuoi cu the: chuoi cu
+      # `"opt_bad = TU.verify_optimize"` da hong ngay khi ham doi sang tra 2
+      # gia tri (bug #104), va bo kiem bao FAIL vi mot ly do khac han cai no
+      # dinh kiem.
+      src.index("verify_loi = []") < src.index("TU.verify_optimize("),
       "neu khai bao sau se NameError khi che do 4 bi loi")
 
 check("verify_loi nam trong bieu thuc ok",

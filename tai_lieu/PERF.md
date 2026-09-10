@@ -92,6 +92,31 @@ Các bộ tốn nhiều thời gian nhất:
 ### 2026-09-10 — Dung lượng ffmpeg đi kèm
 `ffmpeg.exe` 98 MB + `ffprobe.exe` 97 MB = **195 MB**. Đây là phần lớn nhất của gói phát hành.
 
+
+### 2026-09-10 — Gói THẬT hai project DEEP SEA 5 (chạy song song)
+
+**Môi trường:** nguồn NAS `.213` + ổ D:, đích NAS `.214` (SMB), CPU 12 nhân, mỗi project 2 luồng ffmpeg (tool tự hạ vì đích là ổ mạng).
+
+| | DS1_118 (luồng chính) | DS1_124 (hàng đợi) |
+|---|---|---|
+| Tham chiếu | 534 | 825 |
+| Chế độ 4 bỏ đi | 68 file, 87,88 GB | 229 file |
+| Gom thật | 459 file, 101 GB | — |
+| **Gói cuối cùng** | **4,3 GB** | **5,0 GB** |
+| Giảm được | **97,83 GB** | **94,42 GB** |
+| Clip xử lý | 725/1394 (cắt 189, hạ 123, nén 509) | 1092 |
+| Clip thất bại | **0** | **0** |
+| Thiếu / copy lỗi | **0 / 0** | **0 / 0** |
+| Thời gian tối ưu | 29m26s | ~50 phút |
+
+**Tỷ lệ nén thực tế: 101 GB → 4,3 GB ≈ 96%** — cao hơn nhiều so với con số ước lượng 70% tôi dùng ban đầu. Ước lượng cũ quá bi quan.
+
+**Chạy song song không tranh chấp:** 12 nhân, mỗi project 2 luồng mã hoá. Tổng thời gian gần bằng project chậm hơn chứ không phải tổng hai project.
+
+**Tốc độ copy qua SMB:** 5–35 MB/s lúc đầu, tăng lên 140–220 MB/s ở đoạn cuối (liên kết cứng cho file dùng chung — DS1_118 có 130 file, DS1_124 có 258 file dùng chung).
+
+**Bài học cho ước lượng dung lượng:** đừng đo tổng mọi tham chiếu. Chế độ 4 chỉ gom file có role `content` (dùng thật trên timeline) — ở đây là 101 GB trên tổng 176 GB tham chiếu, rồi nén tiếp còn 4,3 GB.
+
 ---
 
 ## Số đã biết từ trước (chưa đo lại trong giai đoạn này)
@@ -114,5 +139,5 @@ Chênh lệch **2 triệu vs 19 nghìn dòng/giây** chính là lý do phải gi
 |---|---|---|
 | ~~P-01~~ | ~~Khởi động onefile vs onedir~~ | ✅ **Đã đo 2026-09-10** — onedir thắng, xem trên |
 | P-02 | Dung lượng bản cập nhật khi chỉ đổi code (không đổi ffmpeg) | onedir cho phép cập nhật **chỉ phần code** (~30 MB) thay vì tải lại cả 225 MB. Ảnh hưởng lớn tới 40–50 người |
-| P-03 | Thời gian gói một project thật, theo kích thước | Cần cho UX-01 (thanh tiến trình) — muốn ước lượng "còn bao lâu" thì phải biết tốc độ thật |
+| ~~P-03~~ | ~~Thời gian gói một project thật~~ | ✅ **Đã đo 2026-09-10** — DS1_118: 30 phút cho 725 clip; DS1_124: ~50 phút cho 1092 clip. Khoảng **22–24 clip/phút** với 2 luồng mã hoá |
 | P-04 | Cold start onedir trên HDD | Kiểm chứng con số 93 ms có giữ được trên máy yếu không |
