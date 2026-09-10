@@ -57,6 +57,13 @@ class Muc:
         self.bat_dau = None      # time.monotonic()
         self.ket_thuc = None
 
+        # So lieu cho cot "Dung luong" va "Thoi gian" cua bang hang doi.
+        # None = CHUA BIET, khac han 0 = da do va bang khong. Bang phai hien
+        # hai truong hop nay khac nhau ("—" va "0 B"), khong duoc gop.
+        self.byte_goc = None     # tong dung luong file se gom (sau khi quet)
+        self.byte_dich = None    # dung luong that o dich (sau khi gom xong)
+        self.so_file = None      # so file se gom
+
     @staticmethod
     def _ten_tu_duong_dan(d):
         # Khong dung Path().name: duong dan co the ket thuc bang dau gach,
@@ -74,8 +81,64 @@ class Muc:
             return None
         return (self.ket_thuc or time.monotonic()) - self.bat_dau
 
+    def mo_ta_dung_luong(self):
+        """Chuoi cho cot "Dung luong" cua bang.
+
+        Ba giai doan, hien khac nhau:
+            chua quet        -> "—"
+            quet xong        -> "18,4 GB"        (uoc tinh se gom)
+            gom xong         -> "4,3 GB / 18,4"  (that / goc)
+        """
+        if self.byte_dich is not None and self.byte_goc:
+            return f"{co(self.byte_dich)} / {co(self.byte_goc)}"
+        if self.byte_dich is not None:
+            return co(self.byte_dich)
+        if self.byte_goc is not None:
+            return co(self.byte_goc)
+        return "—"
+
+    def mo_ta_thoi_gian(self):
+        """Chuoi cho cot "Thoi gian"."""
+        g = self.giay
+        return "—" if g is None else lau(g)
+
     def __repr__(self):
         return f"Muc({self.ten!r}, {self.trang_thai})"
+
+
+def co(byte):
+    """Dung luong doc duoc. Dung dau PHAY thap phan theo kieu Viet Nam.
+
+    Dung GB THAP PHAN (1e9) chu KHONG phai GiB (1024^3) — vi phan con lai cua
+    tool da in nhu vay (`_main_than`: `total/1e9`). Neu o day dung 1024^3 thi
+    cung mot goi hien 101,35 GB o Nhat ky va 94,4 GB o bang — nguoi dung se
+    tuong mot trong hai cho dang sai, va di tim mot loi khong ton tai.
+    Do that tren DS1_118: 101,35e9 byte = 94,4 GiB. Ca hai deu dung, nhung
+    HAI CACH DOC trong cung mot cua so la bao cao khong nhat quan.
+    """
+    if byte is None:
+        return "—"
+    b = float(byte)
+    for don_vi, nguong in (("TB", 1e12), ("GB", 1e9), ("MB", 1e6), ("KB", 1e3)):
+        if b >= nguong:
+            return f"{b / nguong:.2f}".replace(".", ",") + " " + don_vi
+    return f"{int(b)} B"
+
+
+def lau(giay):
+    """Thoi gian doc duoc: 45s / 12m30s / 1h05m.
+
+    KHONG dung "0:12:30": nguoi dung phai dem so dau cham moi biet la gio hay
+    phut. Chu "m"/"h" doc mot phat la hieu.
+    """
+    if giay is None:
+        return "—"
+    g = int(giay)
+    if g < 60:
+        return f"{g}s"
+    if g < 3600:
+        return f"{g // 60}m{g % 60:02d}s"
+    return f"{g // 3600}h{(g % 3600) // 60:02d}m"
 
 
 class HangDoi:
@@ -151,7 +214,7 @@ class HangDoi:
                     continue          # da chay roi, khong chay lai
                 if self._co_huy.is_set():
                     m.trang_thai = HUY
-                    m.thong_bao = "Da huy truoc khi den luot."
+                    m.thong_bao = "Đã huỷ trước khi đến lượt."
                     self.bao("doi", m)
                     continue
                 self._chay_mot_muc(m)
@@ -165,7 +228,7 @@ class HangDoi:
         m.trang_thai = DANG_CHAY
         m.bat_dau = time.monotonic()
         m.ket_thuc = None
-        m.thong_bao = "Dang chay..."
+        m.thong_bao = "Đang chạy..."
         self.bao("doi", m)
         try:
             self.chay_mot(m, self._co_huy.is_set)
@@ -174,7 +237,7 @@ class HangDoi:
             # thanh cong. Cung bay da ghi o SPEC muc 5.2.
             if self._co_huy.is_set():
                 m.trang_thai = HUY
-                m.thong_bao = "Da dung giua chung."
+                m.thong_bao = "Đã dừng giữa chừng."
             else:
                 m.trang_thai = XONG
                 m.thong_bao = "Xong."
@@ -204,9 +267,9 @@ class HangDoi:
         d = self.tong_ket()
         phan = [f"{d[XONG]}/{len(self.muc)} xong"]
         if d[LOI]:
-            phan.append(f"{d[LOI]} loi")
+            phan.append(f"{d[LOI]} lỗi")
         if d[HUY]:
-            phan.append(f"{d[HUY]} huy")
+            phan.append(f"{d[HUY]} huỷ")
         if d[CHO]:
-            phan.append(f"{d[CHO]} cho")
+            phan.append(f"{d[CHO]} chờ")
         return ", ".join(phan)

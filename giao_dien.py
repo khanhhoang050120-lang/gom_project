@@ -667,7 +667,12 @@ class GiaoDien:
         self._cs_hd = CuaSoHangDoi(
             cua,
             chay_mot=lambda m, nd: chay_mot_project(m, nd, G),
-            tuy_chon_mac_dinh=tc)
+            tuy_chon_mac_dinh=tc,
+            # Truyen G va fixed_drives vao chu KHONG de cua so tu import:
+            # nho vay bo kiem dung duoc module gia, va `ui/` khong phu thuoc
+            # cung vao `goi_project_capcut`.
+            G=G,
+            fixed_drives=fixed_drives)
 
     def _tien_hanh(self):
         self.tra_loi_tien_hanh = "y"

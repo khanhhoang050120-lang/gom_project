@@ -292,3 +292,73 @@ Quyết định 2026-09-10: **đóng gói .exe**, ưu tiên ổn định và t�
 - `ffmpeg` trong folder `ffmpeg/` phải đi kèm gói.
 
 Chi tiết đóng gói: `tai_lieu/CI_CD.md`.
+
+---
+
+## 11. [MH-2] Cửa sổ Hàng đợi nhiều project
+
+> **Phương án A**, chủ dự án duyệt 2026-09-10 sau khi xem mockup hai phương án.
+
+**Tiêu đề:** `Gói Project CapCut — Hàng đợi nhiều project`
+**Kích thước:** rộng `1180`, cao `min(780, max(560, chiều_cao_màn_hình - 120))`, tối thiểu `1000×560`.
+
+### 11.1 Bố cục
+
+```
+┌─ Hàng đợi ──────────────┬─ Đang sửa: DS1_118 ──────────────────┐
+│ Project  TT   DL    TG  │ ┌─ 1) Chọn project ─────────────────┐ │
+│ DS1_118  Xong 4,3GB 30m │ │ [Entry đường dẫn]      (Chọn...)  │ │
+│ DS1_124  Chạy 5,0GB 12m │ ├─ 2) Thư mục XUẤT RA ──────────────┤ │
+│ DS1_130  Chờ  —     —   │ │ [Entry]                (Chọn...)  │ │
+│                         │ ├─ 3) Dò theo TÊN ──────────────────┤ │
+│                         │ │ [Entry]           (Thêm thư mục)  │ │
+│ (Mục mới) (Bỏ khỏi HĐ)  │ ├─ 4) Tối ưu dung lượng ────────────┤ │
+│                         │ │ [x] Cắt gọn  [x] Hạ 4K  [x] Bỏ    │ │
+│                         │ └───────────────────────────────────┘ │
+│                         │ (+ Thêm vào hàng đợi) (Quét thử...)   │
+├─────────────────────────┴───────────────────────────────────────┤
+│ (CHẠY CẢ HÀNG ĐỢI) (Dừng)   Sẵn sàng.                           │
+│ Nhật ký — DS1_118                                               │
+│ ┌─────────────────────────────────────────────────────────────┐ │
+│ │ Consolas 9, wrap="char", chỉ đọc                            │ │
+│ └─────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 11.2 Bảng hàng đợi — 4 cột
+
+| Cột | Nội dung | Căn |
+|---|---|---|
+| Project | tên thư mục draft | trái |
+| Trạng thái | Chờ chạy / Đang chạy / Xong / LỖI / Đã huỷ, **tô màu** | trái |
+| Dung lượng | `—` chưa quét · `18,40 GB` đã quét · `4,30 GB / 18,40 GB` gói xong | phải |
+| Thời gian | `—` · `45s` · `12m30s` · `1h30m` | phải |
+
+Dùng `ttk.Treeview` chứ **không** `Listbox`: bốn cột cần căn thẳng hàng, mà Listbox chỉ có một chuỗi nên phải đệm khoảng trắng bằng tay — lệch ngay khi tên project dài ngắn khác nhau.
+
+**`—` khác `0`.** `None` là *chưa biết*, `0` là *đã đo và bằng không*. Gộp hai cái là nói dối.
+
+### 11.3 Form 4 khối — mỗi project giữ RIÊNG
+
+Bấm một dòng trong bảng → 4 khối hiện cấu hình của mục đó để sửa.
+Bấm `Mục mới` → 4 khối trống, nút đổi thành `+ Thêm vào hàng đợi`.
+
+Đây là **điểm chính của phương án A**: project này hạ 4K, project kia giữ nguyên. Nếu dùng chung mục 4 thì một project cần giữ 4K gốc sẽ kéo cả hàng đợi hạ theo.
+
+### 11.4 Nút "Quét thử mục này"
+
+Cửa sổ chính có hai bước `1) QUÉT` → `2) TIẾN HÀNH COPY`, dừng cho người dùng đọc kế hoạch. Hàng đợi chạy thẳng cả loạt — dừng hỏi từng project thì mất ý nghĩa.
+
+`Quét thử` bù chỗ đó: chạy riêng một mục, in ra bao nhiêu file / bao nhiêu GB / thiếu gì, rồi **dừng, không ghi một byte nào**.
+
+**Vẫn giữ nguyên tắc §1:** `ui/quet_thu.py` KHÔNG gọi `main()`, chỉ gọi các hàm **ĐỌC** (`collect_refs`). Ranh giới rạch ròi: *hàm nào có thể GHI thì module này không được gọi*.
+
+Công thức chế độ 4 phải **khớp từng chữ** với `_main_than()` — nó lọc trên `need_copy` chứ không phải toàn bộ `refs`. Lệch là số liệu xem trước nói dối, mà người dùng quyết định dựa trên số đó. Kiểm chứng trên DS1_118 thật: **534/459/68 khớp chính xác** với lần gói thật.
+
+### 11.5 Bẫy đã trả giá
+
+**Không được vẽ lại bảng trong handler chọn dòng** — `bug.md` #106. `_ve_bang()` → `selection_set()` → `<<TreeviewSelect>>` → `_chon_muc()` → `_ve_bang()` → đệ quy vô hạn, `root.update()` không bao giờ trả về. Cờ chống tái nhập **không cứu được** vì Tk gửi sự kiện trễ. Cách đúng: `_chon_muc()` chỉ cập nhật form, nhật ký, nút — không đụng vào bảng.
+
+### 11.6 Đơn vị dung lượng
+
+Dùng **GB thập phân (1e9)**, giống `_main_than()` (`total/1e9`). Nếu bảng dùng GiB thì cùng một gói hiện `101,35 GB` ở Nhật ký và `94,4 GB` ở bảng — người dùng tưởng một trong hai chỗ sai và đi tìm một lỗi không tồn tại.

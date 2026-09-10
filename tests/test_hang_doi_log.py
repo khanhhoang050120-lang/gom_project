@@ -99,7 +99,7 @@ check("giu dong MOI NHAT (khong phai dong cu)",
       any(f"dong {n - 1}" == d for d in m4.nhat_ky),
       f"dong cuoi: {m4.nhat_ky[-3:]}")
 check("noi RO da bo bao nhieu dong (khong im lang)",
-      any("da bo" in d and "dong dau" in d for d in m4.nhat_ky),
+      any("đã bỏ" in d and "dòng đầu" in d for d in m4.nhat_ky),
       m4.nhat_ky[:2])
 
 # ------------------------------------------------------------ loi van ghi
@@ -114,9 +114,9 @@ try:
 except OSError:
     check("loi duoc nem len cho HangDoi bat", True)
 check("nhat ky co dong giai thich loi ghi/doc",
-      any("KHONG GHI/DOC DUOC" in d for d in m5.nhat_ky), m5.nhat_ky[-4:])
+      any("KHÔNG GHI/ĐỌC ĐƯỢC" in d for d in m5.nhat_ky), m5.nhat_ky[-4:])
 check("nhat ky co goi y kiem o dich",
-      any("du cho" in d for d in m5.nhat_ky), m5.nhat_ky[-4:])
+      any("đủ chỗ" in d for d in m5.nhat_ky), m5.nhat_ky[-4:])
 
 # ------------------------------------------------- tra lai trang thai toan cuc
 print("\nTRA LAI trang thai toan cuc du co loi")

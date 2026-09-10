@@ -82,7 +82,7 @@ check("loi giu nguyen thong diep goc",
 check("loi duoc ghi vao nhat ky cua muc",
       any("not enough space" in d for d in p2.nhat_ky), p2.nhat_ky)
 check("tong ket dem ca loi",
-      h.mo_ta_tong_ket() == "2/3 xong, 1 loi", h.mo_ta_tong_ket())
+      h.mo_ta_tong_ket() == "2/3 xong, 1 lỗi", h.mo_ta_tong_ket())
 
 # ------------------------------------------------- BaseException cung phai bat
 print("\nBaseException (KeyboardInterrupt...) cung phai thanh LOI cua muc")
@@ -118,14 +118,14 @@ check("P1 dang chay khi huy -> HUY, KHONG phai Xong",
       h.muc[0].trang_thai == HUY,
       f"{h.muc[0].trang_thai} - bao 'Xong.' sau khi huy la bao cao sai")
 check("thong bao noi ro da dung giua chung",
-      "giua chung" in h.muc[0].thong_bao, h.muc[0].thong_bao)
+      "giữa chừng" in h.muc[0].thong_bao, h.muc[0].thong_bao)
 check("P2, P3 chua chay -> HUY",
       [m.trang_thai for m in h.muc[1:]] == [HUY, HUY],
       [m.trang_thai for m in h.muc[1:]])
 check("thong bao cua muc chua chay khac muc dang chay",
-      "truoc khi den luot" in h.muc[1].thong_bao, h.muc[1].thong_bao)
+      "trước khi đến lượt" in h.muc[1].thong_bao, h.muc[1].thong_bao)
 check("tong ket dem huy",
-      h.mo_ta_tong_ket() == "0/3 xong, 3 huy", h.mo_ta_tong_ket())
+      h.mo_ta_tong_ket() == "0/3 xong, 3 huỷ", h.mo_ta_tong_ket())
 
 # --------------------------------------------- muc da xong khong chay lai
 print("\nMUC DA KET THUC khong duoc chay lai")

@@ -132,7 +132,7 @@ try:
     n_ok, _ = dem_media(tmp / "goi_ok")
     check("goi cua muc sau CO file that", n_ok > 0, n_ok)
     check("tong ket dem ca loi",
-          "1 loi" in h2.mo_ta_tong_ket(), h2.mo_ta_tong_ket())
+          "1 lỗi" in h2.mo_ta_tong_ket(), h2.mo_ta_tong_ket())
 
     # ------------------------------------------- tra lai builtins.input
     print("\nTRA LAI trang thai toan cuc")

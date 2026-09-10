@@ -39,6 +39,7 @@ BO_KIEM = [
     ("HANG DOI  goi main() nhieu lan trong mot tien trinh", "test_hang_doi.py", 60),
     ("HANG DOI UI  dieu phoi nhieu project (khong can tkinter)", "test_hang_doi_ui.py", 60),
     ("HANG DOI LOG  ghi log ra ngoai + gioi han nhat ky", "test_hang_doi_log.py", 60),
+    ("QUET THU  xem truoc so lieu + 2 cot moi cua bang", "test_quet_thu.py", 60),
     ("NUOT LOI ep copy/link that bai (nhom #4,5,11,17,20)", "test_nuot_loi.py", 400),
     ("XEM TIEN TRINH  _fmt_time / do dung luong / chay that", "test_xem_tien_trinh.py", 200),
     ("HIEU NANG  moi truong dem / cache probe", "test_hieu_nang.py", 200),

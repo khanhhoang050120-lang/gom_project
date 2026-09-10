@@ -2067,6 +2067,39 @@ UnicodeEncodeError: 'charmap' codec can't encode character '\u1eaf'
   - **"Ngôn ngữ hiển thị" không phải một quyết định duy nhất.** Bốn đường ra có bốn kết quả khác nhau; ba an toàn sẵn, chỉ một cần vá. Kết luận "không dùng được tiếng Việt có dấu" là sai — chỉ đúng cho một đường.
   - `errors='replace'` **một mình là bẫy**: không chết nhưng ra `C?t g?n`, tức là hỏng âm thầm — loại tệ hơn chết hẳn.
 
+### 106. Vẽ lại bảng trong chính handler chọn dòng → đệ quy vô hạn, cửa sổ treo cứng
+- **Ngày:** 2026-09-10
+- **Mức độ:** 🔴 High (treo cứng ngay khi thêm mục đầu tiên — không dùng được gì)
+- **Vị trí:** `ui/cua_so_hang_doi.py` — `_chon_muc()` / `_ve_bang()`.
+
+**Triệu chứng:** thêm một mục vào hàng đợi rồi gọi `root.update()` → **không bao giờ trả về**. Script E2E bị `timeout` với mã thoát **124**, không một dòng lỗi nào.
+
+**Nguyên nhân gốc — vòng lặp bốn chặng:**
+
+```
+_ve_bang()  ->  selection_set()  ->  Tk sinh <<TreeviewSelect>>
+     ^                                          |
+     |                                          v
+_ve_tat_ca()  <-------------------------  _chon_muc()
+```
+
+`_ve_bang()` xoá sạch bảng rồi dựng lại, nên phải `selection_set()` để giữ lại dòng đang chọn. Nhưng `selection_set` **sinh sự kiện** `<<TreeviewSelect>>`, và handler của nó gọi `_ve_tat_ca()` → lại `_ve_bang()`.
+
+**Đếm được:** 39 lần `_chon_muc`, 21 lần `_ve_bang` trước khi bộ đếm chặn lại.
+
+**Hai lần vá SAI trước khi tìm ra cách đúng** (ghi lại để khỏi đi lại):
+
+1. **Cờ `_dang_ve` bọc quanh `_ve_bang()`** — không ăn thua. Tk gửi `<<TreeviewSelect>>` **trễ**, tới lúc `root.update()` xử lý hàng đợi sự kiện thì cờ đã trả về `False` từ lâu.
+2. **Mở rộng cờ ra cả `selection_set()` ở `_luu_form()`** — vẫn treo, cùng lý do.
+
+**Cách sửa đúng — bỏ hẳn nguyên nhân thay vì chặn triệu chứng:** `_chon_muc()` **không được gọi `_ve_bang()`**. Chọn một dòng KHÔNG làm đổi nội dung bảng, nên vẽ lại bảng ở đó vừa thừa vừa sinh vòng lặp. Nó chỉ cập nhật những thứ thật sự đổi: đầu form, nhật ký, trạng thái nút.
+
+- **Cách kiểm chứng:** bọc `_chon_muc`/`_ve_bang` bằng bộ đếm ném khi vượt 20 lần. Trước khi sửa: 39/21. Sau khi sửa: **1/1**. E2E `root.update()` trả về bình thường, mã thoát 0.
+- **Bài học:**
+  - **Handler của một sự kiện KHÔNG được gọi thứ sinh ra chính sự kiện đó.** Với `Treeview`: `delete`, `insert`, `selection_set` đều sinh `<<TreeviewSelect>>`.
+  - **Cờ chống tái nhập không cứu được sự kiện GỬI TRỄ.** Nó chỉ chặn được đệ quy đồng bộ. Tk xếp sự kiện vào hàng đợi và xử lý ở `update()`/`mainloop()`, lúc đó cờ đã tắt. Cách duy nhất chắc chắn là **không tạo ra vòng**.
+  - **Treo có mã thoát 124 và KHÔNG một dòng lỗi** — khác hẳn crash. Khi một script GUI "chạy mãi không xong", nghi vòng lặp sự kiện trước khi nghi I/O chậm. Cách chẩn đoán nhanh nhất: bọc các hàm nghi ngờ bằng bộ đếm ném khi vượt ngưỡng.
+
 ---
 
 ## Checklist nhanh khi viết/sửa code (rút ra từ các bug trên)

@@ -82,7 +82,7 @@ def chay_mot_project(muc, nen_dung, G, hd_tin=None, ghi_ra=None):
                 if len(muc.nhat_ky) > GIOI_HAN_NHAT_KY:
                     bo = len(muc.nhat_ky) - GIOI_HAN_NHAT_KY
                     del muc.nhat_ky[:bo]
-                    muc.nhat_ky[0] = f"... (da bo {bo} dong dau cho do ton bo nho)"
+                    muc.nhat_ky[0] = f"... (đã bỏ {bo} dòng đầu cho đỡ tốn bộ nhớ)"
                 if ghi_ra is not None:
                     # Ghi THANG ra ngoai: khong co dong nay thi chay khong giao
                     # dien se im lang hoan toan cho toi luc ket thuc.
@@ -118,9 +118,9 @@ def chay_mot_project(muc, nen_dung, G, hd_tin=None, ghi_ra=None):
     except OSError as ex:
         # Loi filesystem la loai hay gap nhat (het cho, mat mang, mat quyen).
         # Ghi them goi y truoc khi nem len cho `HangDoi` bat.
-        muc.nhat_ky.append(f"! KHONG GHI/DOC DUOC: {ex.strerror or ex}")
-        muc.nhat_ky.append("  -> Kiem o dich: co du cho khong, co quyen ghi"
-                           " khong. Neu la o mang: kiem ket noi.")
+        muc.nhat_ky.append(f"! KHÔNG GHI/ĐỌC ĐƯỢC: {ex.strerror or ex}")
+        muc.nhat_ky.append("  -> Kiểm ổ đích: có đủ chỗ không, có quyền ghi"
+                           " không. Nếu là ổ mạng: kiểm kết nối.")
         raise
     except BaseException:
         for d in traceback.format_exc().splitlines():
