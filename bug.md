@@ -1932,6 +1932,40 @@ def main\(\):)` để cắt hàm cũ. Nó **nuốt luôn 11 hàm** nằm giữa.
   - **Nghịch lý đáng nhớ:** bật canh gác thì KHÔNG crash, tắt canh gác thì crash. Nghĩa là thứ trông như thủ phạm lại chỉ là thứ làm đổi thời điểm thu gom rác. Khi nghi một thành phần, hãy **tắt nó đi và đo lại** trước khi kết luận.
 
 
+### 101. `doc_cau_hinh()` ưu tiên sai thứ tự làm bộ kiểm không giả lập được nữa
+- **Ngày:** 2026-09-10
+- **Mức độ:** 🟡 Medium (bắt được ngay bởi bộ kiểm; nhưng nếu lọt thì bộ kiểm mất khả năng dò một lớp lỗi thật)
+- **Vị trí:** `goi_project_capcut.doc_cau_hinh()`.
+
+**Triệu chứng:** sau khi thêm `loi/phien_ban.py` và cho `doc_cau_hinh()` tìm `cau_hinh.json` qua `tim_tai_nguyen()`, bộ `test_on_dinh.py` báo 2 FAIL: `van doc duoc gia tri that ben canh chu thich` (crf = 21 thay vì 19) và `VAN bao khoa la that su go nham` (log rỗng).
+
+**Nguyên nhân gốc:** bộ kiểm giả lập bằng cách **đổi tạm `G.__file__`** sang một thư mục tạm rồi ghi `cau_hinh.json` giả vào đó. Bản vá cho `doc_cau_hinh()` **tìm qua `tim_tai_nguyen()` TRƯỚC**, mà hàm đó dựa trên `sys.executable`/`__file__` của **module `loi.phien_ban`** chứ không phải của `goi_project_capcut`. Nên nó luôn trả về file thật ở gốc repo, và phép giả lập bị vô hiệu — im lặng.
+
+**Cách sửa:** đảo thứ tự. Thử **cạnh module trước** (giữ nguyên hành vi cũ, và đây là đường bộ kiểm giả lập), chỉ khi không thấy mới tìm qua `tim_tai_nguyen()` — đường này chỉ cần cho bản đóng gói .exe.
+
+- **Cách kiểm chứng:** `python tests\test_on_dinh.py` → 20 PASS / 0 FAIL. Trước khi sửa là 18 PASS / 2 FAIL.
+- **Bài học:**
+  - **Thêm một đường tìm kiếm "tốt hơn" lên TRƯỚC đường cũ có thể giết chết điểm móc của bộ kiểm.** Khi một hàm đang được giả lập ở một điểm cụ thể (`__file__`), đường mới phải nằm **sau** làm dự phòng, không nằm trước.
+  - Bộ kiểm FAIL sau một thay đổi tưởng là thuần tuý mở rộng → **nghi bản vá trước, đừng nghi bộ kiểm**. Ở đây bộ kiểm đúng, code sai.
+
+### 102. Bộ kiểm "chỉ dùng thư viện chuẩn" không nhìn thấy package con → báo động giả và bỏ sót
+- **Ngày:** 2026-09-10
+- **Mức độ:** 🟡 Medium (hai lỗi ngược chiều trong cùng một bộ kiểm)
+- **Vị trí:** `tests/test_khong_dependency.py`.
+
+**Triệu chứng:** tạo package `loi/` xong, bộ kiểm báo FAIL: ``` `loi` trong ['giao_dien.py', 'goi_project_capcut.py', 'tu_kiem_lan_dau.py'] -> may con se vo bang ModuleNotFoundError```. Nhưng `loi` là module **của chính tool**, không phải thư viện ngoài.
+
+**Nguyên nhân gốc:** `NOI_BO` được suy ra bằng `glob("*.py")` — chỉ thấy file `.py` **ở gốc**, không thấy thư mục package. Đây là **hai lỗi ngược chiều** trong một:
+1. **Báo động giả:** import nội bộ bị coi là thư viện ngoài.
+2. **Bỏ sót (nguy hiểm hơn):** `cac_file_tool()` cũng chỉ `glob("*.py")` ở gốc, nên **code trong `loi/` hoàn toàn không được kiểm** — một `import requests` đặt trong đó sẽ lọt qua.
+
+**Cách sửa:** cả hai hàm nhận diện package con bằng dấu hiệu `__init__.py`, **tự suy ra** chứ không gõ tay — đúng tinh thần ghi chú sẵn có trong file ("danh sách gõ tay đã lạc hậu BA lần").
+
+- **Cách kiểm chứng:** `cac_file_tool()` trả **9 file** thay vì 7, có `loi\__init__.py` và `loi\phien_ban.py`; `'loi' in NOI_BO` → True. `python tests\test_khong_dependency.py` → 4 PASS / 0 FAIL.
+- **Bài học:**
+  - **Một bộ kiểm báo động giả và một bộ kiểm bỏ sót thường là CÙNG một lỗi nhìn từ hai phía.** Sửa xong phải kiểm cả hai chiều: nó hết kêu oan chưa, VÀ nó có thật sự quét thứ mới không. Chỉ kiểm chiều thứ nhất thì rất dễ "sửa" bằng cách nới điều kiện cho qua.
+  - Chuyển từ **module phẳng** sang **package** làm hỏng mọi chỗ dò file bằng `glob("*.py")` ở gốc. Trước khi tách package, tìm hết các chỗ đó.
+
 ---
 
 ## Checklist nhanh khi viết/sửa code (rút ra từ các bug trên)

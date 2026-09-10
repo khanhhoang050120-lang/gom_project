@@ -40,8 +40,23 @@ def check(ten, dk, chi_tiet=""):
 # TU SUY RA tu file co that, KHONG go tay: danh sach go tay da lac hau BA lan
 # (them `tu_kiem_lan_dau`, roi `canh_gac`...). Moi lan lac hau la mot bo kiem
 # bao dong gia, ma bo kiem keu oan thi som muon cung bi tat di.
-NOI_BO = ({p.stem for p in Path(__file__).resolve().parent.parent.glob("*.py")}
-          | {p.stem for p in Path(__file__).resolve().parent.glob("*.py")})
+def _cac_module_noi_bo():
+    goc = Path(__file__).resolve().parent.parent
+    ten = {p.stem for p in goc.glob("*.py")}
+    ten |= {p.stem for p in Path(__file__).resolve().parent.glob("*.py")}
+    # PACKAGE con (thu muc co `__init__.py`) cung la module noi bo. Thieu dong
+    # nay thi `from loi import phien_ban` bi bao la "thu vien ngoai" - bo kiem
+    # keu oan, ma bo kiem keu oan thi som muon cung bi tat di.
+    for d in goc.iterdir():
+        try:
+            if d.is_dir() and (d / "__init__.py").is_file():
+                ten.add(d.name)
+        except OSError:
+            continue
+    return ten
+
+
+NOI_BO = _cac_module_noi_bo()
 
 # API / cu phap chi co tu ban nao. Tool tuyen bo >= 3.8.
 CAN_BAN_MOI = {
@@ -54,8 +69,19 @@ CAN_BAN_MOI = {
 
 
 def cac_file_tool():
-    """Chi file THUOC TOOL - khong tinh tests/ (tests khong di kem may con)."""
-    return sorted(ROOT.glob("*.py"))
+    """Chi file THUOC TOOL - khong tinh tests/ (tests khong di kem may con).
+
+    Gom ca file trong PACKAGE con (`loi/`, `goi/`, `ui/`...): chung di kem may
+    con nen cung phai tuan dieu kien "chi thu vien chuan".
+    """
+    ra = list(ROOT.glob("*.py"))
+    for d in sorted(ROOT.iterdir()):
+        try:
+            if d.is_dir() and (d / "__init__.py").is_file():
+                ra.extend(sorted(d.glob("*.py")))
+        except OSError:
+            continue
+    return sorted(ra)
 
 
 def main():

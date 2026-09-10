@@ -33,6 +33,26 @@ _GOC = Path(__file__).resolve().parent
 if str(_GOC) not in sys.path:
     sys.path.insert(0, str(_GOC))
 
+# `_GOC` o tren dung de nap module (phai la thu muc chua file .py nay).
+# NHUNG ba viec duoi day can BA thu muc KHAC nhau khi dong goi .exe:
+#   _TAI_NGUYEN - doc file di kem (ffmpeg, cac .py)  -> co the la thu muc tam
+#   _CHUONG_TRINH - thu muc chua .exe                 -> de so voi folder XUAT RA
+#   _GHI        - noi ghi log/dau kiem                -> co the la %LOCALAPPDATA%
+# Dung nham la hong im lang: log bay mat, hoac chan oan folder xuat ra.
+try:
+    from loi import phien_ban as _PB
+    _TAI_NGUYEN = _PB.thu_muc_tai_nguyen()
+    _CHUONG_TRINH = _PB.thu_muc_chuong_trinh()
+except ImportError:
+    _PB = None
+    _TAI_NGUYEN = _CHUONG_TRINH = _GOC
+
+
+def _thu_muc_ghi():
+    """Goi LUC CAN chu khong tinh san: phep thu ghi cham mot chut, va o giai
+    doan nap module co the chua co quyen gi ca."""
+    return _PB.thu_muc_ghi() if _PB else _GOC
+
 
 class _KhongDau:
     """stdout gia. Duoi `pythonw.exe` KHONG co console nen `sys.stdout` co the
@@ -44,8 +64,8 @@ class _KhongDau:
         # va nguoi dung bam dup xong khong thay gi. Ghi ra file de con dau vet.
         try:
             if s and s.strip():
-                with open(_GOC / "_LOI_GIAO_DIEN.log", "a", encoding="utf-8",
-                          errors="replace") as f:
+                with open(_thu_muc_ghi() / "_LOI_GIAO_DIEN.log", "a",
+                          encoding="utf-8", errors="replace") as f:
                     f.write(s)
         except Exception:
             pass
@@ -67,29 +87,11 @@ import goi_project_capcut as G   # noqa: E402
 import tu_kiem_lan_dau as TK     # noqa: E402
 from chung import (fixed_drives, isdir_safe, isfile_safe,   # noqa: E402
                    mtime_an_toan, tuyet_doi_that)
-
-
-class Ong:
-    """Thay cho sys.stdout: day tung dong vao hang doi cua giao dien."""
-
-    def __init__(self, hd):
-        self.hd = hd
-        self._dem = ""
-
-    def write(self, s):
-        self._dem += s
-        while "\n" in self._dem:
-            dong, self._dem = self._dem.split("\n", 1)
-            self.hd.put(("log", dong))
-        # Dong chua xuong hang (vd thanh tien do) van phai hien
-        if len(self._dem) > 200:
-            self.hd.put(("log", self._dem))
-            self._dem = ""
-
-    def flush(self):
-        if self._dem:
-            self.hd.put(("log", self._dem))
-            self._dem = ""
+# CAU NOI giua giao dien va loi - xem ui/cau_noi.py va SPEC_UI_UX.md muc 1.
+# Tach ra module rieng vi day la phan de sai nhat cua UI, va la phan DUY NHAT
+# kiem thu duoc ma khong can tkinter.
+from ui.cau_noi import Ong, TraLoi   # noqa: E402
+from ui import kiem_dau_vao as KDV   # noqa: E402
 
 
 class GiaoDien:
@@ -126,6 +128,7 @@ class GiaoDien:
         self._menus = []          # giu menu chuot phai khoi bi thu gom rac
         self._nhip = None         # id cua `after` nhip dap - phai huy khi dong
         self._lap = {}            # dem cau hoi lap lai -> chan vong lap vo han
+        self._bo_tra_loi = None   # `ui.cau_noi.TraLoi`, dung khi bat dau chay
 
         # Duoi pythonw moi loi trong callback deu IM LANG (stderr la ho den).
         # Khong co luoi nay thi "nut bam khong lam gi ca" - dung trieu chung
@@ -494,86 +497,41 @@ class GiaoDien:
             return
         draft = self.v_draft.get().strip().strip('"')
         out = self.v_out.get().strip().strip('"')
-        if not draft:
-            messagebox.showwarning("Thieu thong tin",
-                                   "Hay chon folder draft CapCut o muc 1.",
-                                   parent=self.root)
-            return
-        # isdir_safe chu KHONG Path.is_dir(): thu muc sau gioi han 260 ky tu
-        # bi Path.is_dir() bao "khong ton tai" -> chan oan project hop le.
-        if self._kiem_nhanh_duoc(draft) and not isdir_safe(Path(draft)):
-            messagebox.showerror("Sai duong dan",
-                                 f"Khong thay thu muc:\n{draft}",
-                                 parent=self.root)
-            return
-        # Chon nham THU MUC ME (vd ...\com.lveditor.draft) la thao tac tu nhien
-        # nhat, va truoc day no lam tool hoi lai vo han -> giao dien treo cung,
-        # RAM tang lien tuc, chi End Task moi thoat. Chan ngay tai cua vao.
-        if (self._kiem_nhanh_duoc(draft)
-                and not any(isfile_safe(Path(draft) / n)
-                            for n in G.CONTENT_NAMES)):
-            messagebox.showerror(
-                "Chua phai folder project",
-                f"Folder nay khong co draft_content.json:\n{draft}\n\n"
-                "Co ve ban dang chon THU MUC ME chua nhieu project,\n"
-                "chu khong phai MOT project.\n\n"
-                "Hay bam 'Quet thu muc me...' de liet ke cac project ben trong,\n"
-                "roi bam 1 dong trong danh sach o tren.",
-                parent=self.root)
-            return
-        if not out:
-            messagebox.showwarning("Thieu thong tin",
-                                   "Hay chon folder XUAT RA o muc 2.",
-                                   parent=self.root)
-            return
-        # "D:" KHONG phai goc o - Windows noi no vao thu muc lam viec, tuc la do
-        # ca goi thang vao thu muc cong cu, VA tool van bao "XONG" (bug #23).
-        # Phat hien thi phai BAO TO, khong duoc tu sua bang abspath().
-        if not tuyet_doi_that(out):
-            messagebox.showerror(
-                "Duong dan chua day du",
-                f"O muc 2 dang la:\n    {out}\n\n"
-                "Day chua phai duong dan day du nen Windows se hieu no theo\n"
-                "thu muc cua chinh cong cu - goi se nam sai cho.\n\n"
-                "Phai bat dau bang chu o VA dau gach, vi du:\n"
-                r"    D:\GOI_BAN_GIAO" "\n"
-                r"hoac o mang:  \\192.168.1.214\e\GOI",
-                parent=self.root)
-            return
-        p_out = Path(os.path.abspath(out))
-        if p_out == _GOC:
-            messagebox.showerror(
-                "Khong duoc", "Folder XUAT RA khong duoc la chinh thu muc"
-                               " cong cu.", parent=self.root)
-            return
-        if self._kiem_nhanh_duoc(p_out) and isfile_safe(p_out):
-            messagebox.showerror("Sai duong dan",
-                                 f"Muc 2 dang tro vao mot FILE, khong phai"
-                                 f" thu muc:\n{p_out}", parent=self.root)
-            return
         # O 3: lam sach truoc (nhay kep cua "Copy as path", xuong hang, trung)
-        # roi CANH BAO thu muc khong ton tai. Canh bao chu khong chan: mot USB
-        # vua rut khong nen chan hai thu muc con lai.
         do_sach = self._lam_sach_ds_duong_dan(self.v_do.get())
-        xau = [x for x in do_sach.split(";")
-               if x and self._kiem_nhanh_duoc(x) and not isdir_safe(Path(x))]
-        if xau and not messagebox.askyesno(
-                "Thu muc do khong ton tai",
-                "Cac thu muc sau o muc 3 KHONG ton tai va se bi BO QUA:\n\n  "
-                + "\n  ".join(xau)
-                + "\n\nNho: nhieu thu muc cach nhau bang dau CHAM PHAY ';'."
-                  "\n\nVan chay?", parent=self.root):
-            return
-        if not (self.v_trim.get() or self.v_scale.get() or self.v_clean.get()):
-            if not messagebox.askyesno(
-                    "Khong bat toi uu nao",
-                    "Ban chua tich o nao o muc 4.\n\n"
-                    "Tool se copy NGUYEN BAN (an toan nhat nhung nang hon nhieu).\n"
-                    "Tiep tuc?", parent=self.root):
+
+        # Cac phep kiem QUYET DINH nam o `ui/kiem_dau_vao.py` (SPEC muc 8);
+        # o day chi HIEN THI ket qua. Tach nhu vay de kiem chung duoc chung ma
+        # khong can dung cua so Tk.
+        _cam = (_GOC, _CHUONG_TRINH, _TAI_NGUYEN)
+        for kq in (
+            KDV.kiem_draft(draft, self._kiem_nhanh_duoc, isdir_safe,
+                           isfile_safe, G.CONTENT_NAMES),
+            KDV.kiem_out(out, _cam, self._kiem_nhanh_duoc, isfile_safe,
+                         tuyet_doi_that),
+            KDV.kiem_do(do_sach, self._kiem_nhanh_duoc, isdir_safe),
+            KDV.kiem_toi_uu(self.v_trim.get(), self.v_scale.get(),
+                            self.v_clean.get()),
+        ):
+            if kq.ok:
+                continue
+            if kq.hoi:
+                # Nguoi dung van co quyen chay tiep - vd mot USB vua rut khong
+                # duoc chan ca lan gom.
+                if messagebox.askyesno(kq.tieu_de, kq.noi_dung, parent=self.root):
+                    continue
                 return
+            if kq.muc == "canh_bao":
+                messagebox.showwarning(kq.tieu_de, kq.noi_dung, parent=self.root)
+            else:
+                messagebox.showerror(kq.tieu_de, kq.noi_dung, parent=self.root)
+            return
 
         self.dang_chay = True
         self._lap = {}            # bo dem chong lap, cho moi lan chay
+        # PHAI xoa: bo tra loi cu giu BAN CHUP cua lan chay TRUOC. Khong xoa thi
+        # lan chay thu hai se dung duong dan cu - im lang va sai hoan toan.
+        self._bo_tra_loi = None
         self.cho_tien_hanh.clear()
         # QUEN DONG NAY = lan chay THU HAI sau mot lan huy se ngat ngay o thu muc
         # dau tien va giao goi THIEU FILE ma van moi nguoi dung bam COPY.
@@ -604,49 +562,21 @@ class GiaoDien:
         self.luong.start()
 
     def _tra_loi(self, loi_nhac=""):
-        """Thay cho input(): tra loi theo NOI DUNG cau hoi, khong theo thu tu.
+        """Uy quyen cho `ui.cau_noi.TraLoi` - xem module do de biet chi tiet.
 
-        So buoc hoi thay doi tuy tinh huong (buoc 'do theo ten' chi hien khi co
-        file thieu), nen danh sach cung se lech mot nhip - dung bay da ghi o
-        bug.md #10.
+        Giu lai ham nay lam cua vao de bo kiem cu (goi thang `gd._tra_loi(...)`)
+        van chay duoc, va de `self._lap` van soi duoc tu ben ngoai.
         """
-        q = str(loi_nhac).lower()
-        self.hd.put(("log", str(loi_nhac).rstrip()))
-        # Chot chong lap PHO QUAT. Tool hoi lai cung mot cau khi cau tra loi
-        # khong dung (vd folder khong co draft_content.json) - o dong lenh
-        # nguoi that se sua, o day ta tra loi y het -> vong lap vo han, giao
-        # dien treo cung. Nguong 3 de khong pha luong hop le nao co the hoi lai.
-        self._lap[q] = self._lap.get(q, 0) + 1
-        if self._lap[q] > 3:
-            raise RuntimeError(
-                "Tool hoi lai cung mot cau %d lan:\n  %s\n"
-                "Duong dan o muc 1 co le khong phai folder draft CapCut."
-                " Da dung de khoi treo may." % (self._lap[q], str(loi_nhac).strip()))
-        # CHI dung ban chup - ham nay chay o THREAD PHU, khong duoc goi `.get()`
-        # cua bat ky bien tkinter nao (se nem "main thread is not in main loop").
-        c = self.chup
-
-        if "nhap so" in q:
-            return "P"
-        if "duong dan folder draft" in q:
-            return c["draft"]
-        if "duong dan thu muc me" in q:
-            return str(Path(c["draft"]).parent)
-        if "folder xuat ra" in q:
-            return c["out"]
-        if "chon 1 hoac 4" in q:
-            return "4" if (c["trim"] or c["scale"] or c["cleanup"]) else "1"
-        if "thu muc" in q and "de do" in q:
-            return c["do"]
-        if "tien hanh" in q:
-            # DUNG lai cho nguoi dung bam nut - day la ranh gioi giua QUET va COPY
-            self.hd.put(("cho_tien_hanh", None))
-            self.cho_tien_hanh.wait()
-            return self.tra_loi_tien_hanh or "n"
-        if "enter de dong" in q:
-            return ""
-        # KHONG doan bua: mot cau hoi la ma tra loi sai co the xoa nham du lieu
-        raise RuntimeError(f"Giao dien chua biet tra loi cau hoi: {loi_nhac!r}")
+        if self._bo_tra_loi is None:
+            self._bo_tra_loi = TraLoi(
+                chup=self.chup,
+                hd=self.hd,
+                cho_tien_hanh=self.cho_tien_hanh,
+                doc_tra_loi_tien_hanh=lambda: self.tra_loi_tien_hanh,
+            )
+            # Dung CHUNG mot dict dem: bo kiem va `_bat_dau()` deu soi `self._lap`.
+            self._bo_tra_loi.lap = self._lap
+        return self._bo_tra_loi(loi_nhac)
 
     def _chay(self):
         cu_in, cu_out = builtins.input, sys.stdout
@@ -913,10 +843,12 @@ class CuaSoTuKiem:
                     self._ghi("      " + d)
             self.root.update()
 
-        self.dat, self.ds = TK.chay(_GOC, bao=bao)
+        # DOC tai nguyen (ffmpeg, cac .py) -> thu muc tai nguyen
+        self.dat, self.ds = TK.chay(_TAI_NGUYEN, bao=bao)
         if self.dat:
             try:
-                TK.ghi_dau(_GOC, G.TOOL_VERSION, self.ds)
+                # GHI dau -> thu muc ghi duoc (co the la %LOCALAPPDATA%)
+                TK.ghi_dau(TK.thu_muc_dau(), G.TOOL_VERSION, self.ds)
             except Exception as ex:
                 # Ghi dau that bai KHONG duoc chan nguoi dung - chi nghia la lan
                 # sau kiem lai (ton 5 giay), khong phai loi nghiem trong.
@@ -955,7 +887,8 @@ def main():
     # Xem bug.md.
     try:
         # --- Lan dau: tu kiem roi moi mo giao dien ---
-        if not TK.da_kiem(_GOC, G.TOOL_VERSION):
+        # DOC dau: phai cung cho voi noi GHI, khong thi lan nao cung kiem lai
+        if not TK.da_kiem(TK.thu_muc_dau(), G.TOOL_VERSION):
             r0 = tk.Tk()
             _dat_theme(r0)
             ck = CuaSoTuKiem(r0)

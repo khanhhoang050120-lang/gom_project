@@ -129,7 +129,19 @@ def doc_cau_hinh(log=print):
     dinh cho khoa do, khong duoc im lang (checklist bug.md).
     """
     ch = dict(CAU_HINH_MAC_DINH)
+    # Thu CANH MODULE truoc (hanh vi cu, va la cho bo kiem gia lap bang cach
+    # doi tam `__file__`). Chi khi khong thay moi tim qua cac thu muc tai
+    # nguyen - can cho ban dong goi .exe, noi `__file__` khong tro vao thu muc
+    # chua .exe.
     duong = Path(__file__).resolve().parent / CAU_HINH_NAME
+    if not isfile_safe(duong):
+        try:
+            from loi import phien_ban as _PB
+            tim = _PB.tim_tai_nguyen(CAU_HINH_NAME)
+            if tim is not None:
+                duong = tim
+        except ImportError:
+            pass
     if not isfile_safe(duong):
         return ch
     try:
@@ -876,7 +888,14 @@ def kiem_tien_de():
     day la loi se xay ra.
     """
     loi = []
-    goc = Path(__file__).resolve().parent
+    # DOC tai nguyen: khi dong goi .exe day co the la thu muc giai nen tam,
+    # khong phai thu muc chua .exe.
+    try:
+        from loi import phien_ban as _PB
+        goc = _PB.thu_muc_tai_nguyen()
+    except ImportError:
+        _PB = None
+        goc = Path(__file__).resolve().parent
 
     # 1. Phien ban Python: f-string co '=' va os.replace deu can >= 3.8
     if sys.version_info < (3, 8):
@@ -901,8 +920,18 @@ def kiem_tien_de():
             loi.append(f"Khong nap duoc `toi_uu_dung_luong.py`:"
                        f" {type(ex).__name__}: {ex}")
 
-    # 4. Quyen ghi o thu muc tool (can cho cau_hinh.json va file tam)
-    if not os.access(str(goc), os.W_OK):
+    # 4. Quyen ghi. PHAI kiem NOI GHI THAT chu khong phai thu muc tai nguyen:
+    #    khi dong goi onefile, thu muc tai nguyen la thu muc giai nen TAM (se
+    #    bien mat), con khi cai vao `Program Files` thi thu muc chuong trinh
+    #    khong ghi duoc va tool da tu lui ve `%LOCALAPPDATA%`. Kiem nham cho se
+    #    bao loi OAN tren mot ban cai hoan toan binh thuong.
+    #    Cung KHONG dung `os.access(W_OK)`: tren Windows no doc quyen he thong
+    #    chu khong tinh UAC virtualization -> tra ket qua sai. Thu GHI THAT.
+    if _PB is not None:
+        noi_ghi = _PB.thu_muc_ghi()
+        if not _PB._ghi_duoc(noi_ghi):
+            loi.append(f"Khong ghi duoc vao {noi_ghi} - mot so buoc se that bai.")
+    elif not os.access(str(goc), os.W_OK):
         loi.append(f"Khong co quyen ghi trong {goc} - mot so buoc se that bai.")
     return loi
 

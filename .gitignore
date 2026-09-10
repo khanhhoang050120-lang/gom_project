@@ -9,3 +9,6 @@ __pycache__/
 
 # Ket qua tu kiem sinh ra luc chay
 .da_tu_kiem_*.json
+
+# Log loi giao dien (sinh ra khi chay/kiem thu)
+_LOI_GIAO_DIEN.log

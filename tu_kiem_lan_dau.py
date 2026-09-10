@@ -23,7 +23,14 @@ import sys
 import time
 from pathlib import Path
 
-GOC = Path(__file__).resolve().parent
+try:
+    from loi import phien_ban as _PB
+except ImportError:      # chay rieng le / thu muc la -> lui ve cach cu
+    _PB = None
+
+# GOC = noi DOC tai nguyen di kem (ffmpeg, cac file .py cua tool).
+# Khi dong goi .exe thi day KHONG phai thu muc chua .exe - xem loi/phien_ban.py.
+GOC = _PB.thu_muc_tai_nguyen() if _PB else Path(__file__).resolve().parent
 
 # File BAT BUOC phai co sau khi giai nen. Thieu mot cai la hong theo kieu khac
 # nhau, nen liet ke ro thay vi dem tong so file.
@@ -34,6 +41,13 @@ FILE_BAT_BUOC = [
     "xem_tien_trinh.py",
     "giao_dien.py",
     "cau_hinh.json",
+    # Package con: thieu MOT file la giao dien chet ngay khi khoi dong bang
+    # ModuleNotFoundError - dung loai loi ma danh sach nay sinh ra de bat.
+    "loi/__init__.py",
+    "loi/phien_ban.py",
+    "ui/__init__.py",
+    "ui/cau_noi.py",
+    "ui/kiem_dau_vao.py",
     "ffmpeg/bin/ffmpeg.exe",
     "ffmpeg/bin/ffprobe.exe",
 ]
@@ -42,6 +56,17 @@ FILE_BAT_BUOC = [
 def ten_dau(ver: str) -> str:
     """Dau kiem theo PHIEN BAN: ban moi se tu kiem lai, khong dung dau cu."""
     return f".da_tu_kiem_{ver}.json"
+
+
+def thu_muc_dau() -> Path:
+    """Noi GHI dau tu kiem. KHAC voi `GOC` (noi doc tai nguyen).
+
+    Khi cai vao `Program Files`, thu muc chuong trinh khong ghi duoc; luc do
+    `thu_muc_ghi()` lui ve `%LOCALAPPDATA%`. Neu van ghi canh chuong trinh nhu
+    truoc thi dau kiem KHONG BAO GIO ghi duoc -> lan nao mo cung tu kiem lai,
+    ton ~3,2 giay phep thu ffmpeg moi lan, va khong mot loi bao nao.
+    """
+    return _PB.thu_muc_ghi() if _PB else GOC
 
 
 def da_kiem(goc: Path, ver: str) -> bool:

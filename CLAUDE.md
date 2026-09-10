@@ -33,3 +33,29 @@ Chuyện này đã xảy ra và đã gây va chạm thật. Quy tắc:
 - **Kiểm chứng:** sửa xong phải chạy test/E2E thật (unit test + luồng chính + case lỗi), không chỉ đọc code. Cẩn thận backslash bị nuốt khi test path Windows qua bash/`python -c` — ưu tiên file test Python hoặc `chr(92)`.
 
 ## Chỉ dùng thư viện chuẩn của Python (không thêm dependency ngoài) trừ khi người dùng đồng ý.
+
+## Định hướng sản phẩm (từ 2026-09-10) — QUY TẮC THƯỜNG TRỰC
+
+Đây **không còn là script nội bộ** mà là **phần mềm phát hành cho nhiều người dùng**, đưa lên GitHub.
+
+1. **UI/UX phải có bản thiết kế TRƯỚC khi code.** Bản thiết kế nằm ở `tai_lieu/SPEC_UI_UX.md`. Mọi lần làm giao diện sau này **bám theo bản thiết kế đó**, không tự ứng biến. Nếu thiết kế cần đổi thì sửa spec trước, code sau.
+2. **CI/CD bằng GitHub Actions + auto-update.** Publish bản mới → CI chạy kiểm thử → app phía người dùng báo "có bản cập nhật mới", bấm là tự cập nhật. Chi tiết và các điểm chưa quyết: `tai_lieu/CI_CD.md`.
+3. **Mọi tính năng hiện có phải chạy ổn định như ban đầu.** Kiến trúc đẹp mà mất tính năng là thất bại. Không refactor cả file lớn một lần — tách từng mảnh, mỗi mảnh xong chạy `python tests\chay_het.py` để verify.
+
+## KHÔNG ĐƯỢC TẠO "GOD COMPONENT"
+
+Chủ dự án gọi việc chia nhỏ code thành module/component/folder là **"nguyên tắc sống còn"** và **"yếu tố đặc biệt cần phải tuân thủ"**.
+
+- Thêm tính năng → **tạo module mới**, KHÔNG nối thêm vào file lớn sẵn có.
+- Buộc phải sửa trong file lớn → cân nhắc tách phần liên quan ra trước.
+- Tách theo **trách nhiệm**, không theo dung lượng.
+- Hiện trạng cần xử lý: `goi_project_capcut.py` (88KB), `toi_uu_dung_luong.py` (68KB), `giao_dien.py` (45KB). Bản đồ module: `tai_lieu/KIEN_TRUC.md`.
+
+## Folder `tai_lieu/` — tri thức xây dựng hệ thống
+
+Gặp **bug, conflict, issue, risk, spec, perf** trong quá trình build → **ghi ngay** vào file `.md` tương ứng trong `tai_lieu/`, KHÔNG chờ người dùng nhắc.
+
+- `tai_lieu/` = tri thức **xây dựng** (kiến trúc, xung đột refactor, rủi ro phát hành, spec UI/UX, số đo hiệu năng, checklist).
+- `bug.md` = nhật ký **lỗi runtime** của tool, giữ nguyên quy trình đánh số đã nêu ở trên.
+- Đừng trộn lẫn hai nơi. Xem `tai_lieu/README.md`.
+- Trước khi báo "xong": chạy qua `tai_lieu/CHECK.md`.

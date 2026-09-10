@@ -46,6 +46,17 @@ def chep_tool(dich, bo_qua=()):
             continue
         if (ROOT / ten).is_file():
             shutil.copy2(ROOT / ten, dich / ten)
+    # PACKAGE con: nguoi dung chep tool di la chep CA THU MUC, nen ban mo phong
+    # cung phai chep. Thieu `loi/` thi `goi_project_capcut` nap khong duoc va
+    # bo kiem se do vi mot ly do KHAC han cai no dinh kiem.
+    for goi in ("loi", "ui"):
+        if goi in bo_qua:
+            continue
+        nguon = ROOT / goi
+        if nguon.is_dir():
+            shutil.copytree(nguon, dich / goi,
+                            ignore=shutil.ignore_patterns("__pycache__"),
+                            dirs_exist_ok=True)
     return dich
 
 
