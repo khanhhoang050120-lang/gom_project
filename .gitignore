@@ -1,0 +1,11 @@
+# Runtime nhung (tai ve rieng, khong dua vao repo)
+# ffmpeg.exe / ffprobe.exe ~98 MB moi file, vuot gioi han GitHub
+ffmpeg/
+python/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Ket qua tu kiem sinh ra luc chay
+.da_tu_kiem_*.json

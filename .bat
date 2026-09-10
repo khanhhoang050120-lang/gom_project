@@ -1,0 +1,1 @@
+  - SE KET LUAN "co Python" va chay tiep

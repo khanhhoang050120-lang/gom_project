@@ -1,0 +1,18 @@
+{
+  "_huong_dan": "Sua file nay de doi cach chay. Xoa file di thi tool dung gia tri mac dinh. Sai cu phap JSON -> tool bao ro roi dung mac dinh, khong chet.",
+
+  "_crf": "Chat luong nen H.264. So NHO = net hon + nang hon. 18 rat net, 21 mac dinh, 25 nhe.",
+  "crf": 21,
+
+  "_preset": "Toc do ma hoa: ultrafast / veryfast / medium / slow. Cham hon = file nho hon mot chut.",
+  "preset": "veryfast",
+
+  "_workers": "So clip ma hoa cung luc. De null = TU CHON theo dich (xem 2 dong duoi). Dat so cu the de ep cung.",
+  "workers": null,
+
+  "_workers_o_mang": "Dung khi folder XUAT RA nam tren o mang/NAS. Giu THAP: chay nhieu luong cung luc tren cung NAS lam tang manh rui ro treo SMB (bug #25), khong chi lam cham.",
+  "workers_o_mang": 2,
+
+  "_workers_o_cuc_bo": "Dung khi folder XUAT RA nam tren o cung cua may. Co the tang neu may nhieu nhan va ban khong dung may lam viec khac.",
+  "workers_o_cuc_bo": 4
+}

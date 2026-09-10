@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"D:\\tools_goi_project_capcut\\.claude\\bug_md_reminder.py\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
