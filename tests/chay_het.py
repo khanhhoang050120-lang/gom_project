@@ -45,6 +45,7 @@ BO_KIEM = [
     ("TAI LIEU BAN_GIAO.md phai khop code that", "test_tai_lieu.py", 60),
     ("CUU BAN GOC bi bo qua ma khong duoc thay", "test_cuu_ban_goc.py", 120),
     ("BANG MA  doc dau ra ffmpeg bang UTF-8 (may con ACP 1258)", "test_bang_ma.py", 200),
+    ("TIENG VIET  chu co dau phai in duoc tren may ACP 1258", "test_tieng_viet.py", 200),
     ("QUET THIEU  NAS rot phien -> khong duoc xoa nham media", "test_quet_thieu.py", 120),
     ("FFMPEG HONG  co file nhung khong chay duoc", "test_ffmpeg_hong.py", 120),
     ("BAT      diem vao may con: thieu Python / thieu file", "test_bat.py", 300),

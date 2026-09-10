@@ -30,6 +30,15 @@ from __future__ import annotations
 import json, os, platform, re, shutil, string, sys, time
 from pathlib import Path
 
+# EP UTF-8 NGAY DAY - truoc moi `print`. May con Windows tieng Viet co ACP 1258
+# va o do `print` chu co dau lam CHET ca tien trinh (bug.md #68, #105).
+# Dat trong try vi `loi/` co the thieu; luc do `kiem_tien_de()` se bao ro.
+try:
+    from loi.bang_ma import ep_utf8 as _ep_utf8
+    _ep_utf8()
+except Exception:
+    pass
+
 # G1: `chung.py` duoc import o CAP MODULE nen neu no thieu, file nay chet NGAY
 # tai day - truoc ca main() va truoc kiem_tien_de(). Vi vay phep kiem cho no
 # PHAI nam dung o cho import, khong the doi den phan tien de. Nguoi dung chep

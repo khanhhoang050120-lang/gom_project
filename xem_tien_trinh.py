@@ -18,6 +18,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from chung import _lp, _fmt_time  # noqa: E402
 
+try:
+    from loi.bang_ma import ep_utf8 as _ep_utf8   # noqa: E402
+    _ep_utf8()
+except Exception:
+    pass
+
 
 def dir_size_and_count(root: Path):
     """Tong byte + so file trong root (de quy). Bo qua loi le.

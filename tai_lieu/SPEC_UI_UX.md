@@ -9,7 +9,7 @@
 - Người dùng: **40–50 người**, phần lớn không rành kỹ thuật (dựng video, không phải lập trình).
 - Phát hành: **đóng gói .exe**, chạy như phần mềm desktop Windows.
 - Ưu tiên chủ dự án nêu rõ: **tính ổn định và tốc độ**.
-- Ngôn ngữ hiển thị: tiếng Việt **không dấu** (xem §7).
+- Ngôn ngữ hiển thị: tiếng Việt **CÓ DẤU** (đổi 2026-09-10 — xem §7).
 
 ---
 
@@ -225,9 +225,22 @@ Dưới `pythonw.exe` **không có console**, stderr là hố đen — triệu c
 | Phông nhấn mạnh | Segoe UI 10 bold |
 | Màu phụ đề | `#555` |
 | Màu cảnh báo | `#7a4a00` |
-| Ngôn ngữ | **Tiếng Việt không dấu** |
+| Ngôn ngữ | **Tiếng Việt CÓ DẤU** |
 
-> **Vì sao không dấu:** dòng chữ đi qua `sys.stdout` dùng chung với dòng lệnh, nơi console Windows có thể ở codepage không đọc được tiếng Việt có dấu (`_KhongDau` sinh ra chính từ họ vấn đề này). Đây là ràng buộc **bắt buộc giữ** cho tới khi chứng minh được toàn tuyến an toàn.
+> **Đổi 2026-09-10:** ràng buộc "không dấu" cũ nói phải giữ *"cho tới khi chứng minh được toàn tuyến an toàn"*. Đã đo và chứng minh xong.
+
+**Bốn đường chữ đi ra, kết quả KHÁC NHAU:**
+
+| Đường ra | Kết quả |
+|---|---|
+| Nhãn tkinter (Tcl) | An toàn — không qua stdout |
+| Ô Nhật ký của giao diện | An toàn — chuỗi Python thuần |
+| File báo cáo (`encoding="utf-8"`) | An toàn |
+| Console chế độ dòng lệnh | **CHẾT** với cp1258 / cp1252 |
+
+Ba đường an toàn sẵn; chỉ đường thứ tư cần vá. Đã sửa bằng `loi/bang_ma.py` — `ep_utf8()` gọi ở đầu cả ba điểm vào, trước dòng `print` đầu tiên. Chi tiết: `bug.md` #105.
+
+**Ràng buộc còn lại — file `.bat` vẫn phải KHÔNG DẤU.** `cmd.exe` diễn giải comment theo code page trước khi `chcp 65001` kịp chạy (`bug.md` #12). Đây là ràng buộc riêng của `.bat`, không liên quan tới Python.
 
 ---
 

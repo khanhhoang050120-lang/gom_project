@@ -47,6 +47,14 @@ except ImportError:
     _PB = None
     _TAI_NGUYEN = _CHUONG_TRINH = _GOC
 
+# EP UTF-8 truoc khi thay `sys.stdout` o duoi: may con ACP 1258 khong in duoc
+# chu co dau (bug.md #68, #105).
+try:
+    from loi.bang_ma import ep_utf8 as _ep_utf8
+    _ep_utf8()
+except Exception:
+    pass
+
 
 def _thu_muc_ghi():
     """Goi LUC CAN chu khong tinh san: phep thu ghi cham mot chut, va o giai

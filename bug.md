@@ -2027,6 +2027,46 @@ Nói cách khác: **CapCut tự nó đã ghi lệch từ trước**, tool chỉ 
   - **Một chỉ số xấu duy nhất kéo tụt cả kết luận thì phải soi nó trước khi tin.** Ở đây 3 dòng lệch làm hạ kết luận của một gói có 0 thiếu, 0 copy lỗi, 0 clip mã hỏng.
   - Khi một bản vá "không có tác dụng gì", **nghi ngưỡng/điều kiện biên trước khi nghi logic** — `>` và `>=` khác nhau đúng một trường hợp, và trường hợp đó lại chính là dữ liệu thật.
 
+### 105. Tiếng Việt CÓ DẤU làm chết cả tiến trình trên máy ACP 1258
+- **Ngày:** 2026-09-10
+- **Mức độ:** 🔴 High (chết hẳn tiến trình, và **chỉ chết trên máy người dùng**)
+- **Vị trí:** mọi `print()` — điểm vào `goi_project_capcut.py`, `giao_dien.py`, `xem_tien_trinh.py`.
+
+**Bối cảnh:** chủ dự án yêu cầu đổi toàn bộ giao diện sang tiếng Việt **có dấu**. `SPEC_UI_UX.md` §7 đang ghi ràng buộc "phải không dấu", nên phải đo trước khi hứa.
+
+**Đo được — bốn đường chữ đi ra, kết quả KHÁC NHAU:**
+
+| Đường ra | Kết quả |
+|---|---|
+| Nhãn tkinter (Tcl) | **An toàn** — không qua stdout |
+| Ô Nhật ký của giao diện | **An toàn** — chuỗi Python thuần |
+| File báo cáo (`encoding="utf-8"`) | **An toàn** |
+| Console chế độ dòng lệnh | **CHẾT** với cp1258 / cp1252 |
+
+```
+UnicodeEncodeError: 'charmap' codec can't encode character '\u1eaf'
+```
+
+`\u1eaf` là chữ `ắ`.
+
+**Nguyên nhân gốc:** máy phát triển có `ACP 65001` (UTF-8) nên `print` chữ có dấu **không bao giờ lỗi**. Máy con Windows tiếng Việt mặc định là **ACP 1258** (hoặc 1252), ở đó `cp1258` không có bảng mã cho `ắ` → `charmap` codec ném → **chết cả tiến trình**. Đây đúng loại lỗi mà #68 đã cảnh báo, chỉ khác chiều: #68 là *đọc* đầu ra ffmpeg, #105 là *ghi* ra console.
+
+**Ba cách đã thử** (ghi lại để khỏi thử lại):
+
+| Cách | cp1258 | cp1252 | mặc định |
+|---|---|---|---|
+| không sửa gì | **chết** | **chết** | OK |
+| `reconfigure(errors='replace')` | `C?t g?n` | `C?t g?n` | OK |
+| **`reconfigure(encoding='utf-8', errors='replace')`** | **OK** | **OK** | **OK** |
+
+**Cách sửa:** module mới `loi/bang_ma.py` với `ep_utf8()`, gọi **ngay đầu cả ba điểm vào, trước dòng `print` đầu tiên**. Giữ `errors="replace"` để một ký tự lạ chỉ thành `?` chứ không giết một lần gom đang chạy dở hàng chục phút. Hàm **không bao giờ ném** — dưới `pythonw` thì `sys.stdout` có thể là `None`, và một lỗi ở đó sẽ giết chương trình trước khi giao diện kịp hiện.
+
+- **Cách kiểm chứng:** `tests\test_tieng_viet.py` — 14 PASS / 0 FAIL. Bộ kiểm chạy trong **tiến trình con** với `PYTHONIOENCODING=cp1258`; chạy trong chính tiến trình hiện tại là **vô nghĩa** (luôn PASS trên máy phát triển). Nó **chứng minh lỗi có thật trước**, rồi mới chứng minh cách sửa.
+- **Bài học:**
+  - **Một bộ kiểm bảng mã chạy trên máy phát triển là bộ kiểm rỗng.** Phải ép môi trường của máy đích (`PYTHONIOENCODING`) trong tiến trình con. Cùng bài học với #68 nhưng ở chiều ngược lại — **đọc** đã học rồi, **ghi** thì chưa.
+  - **"Ngôn ngữ hiển thị" không phải một quyết định duy nhất.** Bốn đường ra có bốn kết quả khác nhau; ba an toàn sẵn, chỉ một cần vá. Kết luận "không dùng được tiếng Việt có dấu" là sai — chỉ đúng cho một đường.
+  - `errors='replace'` **một mình là bẫy**: không chết nhưng ra `C?t g?n`, tức là hỏng âm thầm — loại tệ hơn chết hẳn.
+
 ---
 
 ## Checklist nhanh khi viết/sửa code (rút ra từ các bug trên)
