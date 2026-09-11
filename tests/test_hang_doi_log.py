@@ -129,6 +129,6 @@ check("sys.stdout da tra lai", type(sys.stdout).__name__ != "Ong",
 
 print()
 print("=" * 68)
-print(f"  PASS {pas}   FAIL {fail}")
+print(f"KET QUA: {pas} PASS / {fail} FAIL")
 print("=" * 68)
 sys.exit(1 if fail else 0)

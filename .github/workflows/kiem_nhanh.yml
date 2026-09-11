@@ -1,0 +1,77 @@
+# Cong kiem chinh - chay tren MOI push va MOI pull request.
+#
+# Vi sao chi mot job, khong chia nhieu workflow nhu ke hoach ban dau:
+#   Da DO THUC NGHIEM 2026-09-11 (giau thu muc ffmpeg/ di roi chay lai toan
+#   bo): 43/43 bo kiem DAT tren may khong co ffmpeg, 0 bo phai bo qua, tong
+#   79 giay. Cac bo E2E tu tim ffmpeg va co duong lui dang hoang. Vay khong
+#   can tach "kiem nhanh" / "kiem day du", cung khong can cai ffmpeg trong
+#   CI - them buoc cai chi lam cham va them mot diem hong.
+#
+#   Neu sau nay co bo kiem BAT BUOC phai co ffmpeg that, luc do moi tach.
+#   Dung tach truoc khi can.
+#
+# MAX_BO_QUA=0: tren runner sach hien KHONG bo nao duoc phep bo qua. Neu mot
+# ngay nao do co bo bat dau bo qua, CI se DO va bat phai giai thich - thay vi
+# lang le tut so bo chay that (nhom C trong bug.md).
+
+name: Kiem thu
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# Huy lan chay cu khi co push moi tren cung nhanh - tiet kiem phut CI.
+concurrency:
+  group: kiem-thu-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kiem-thu:
+    name: Bo kiem tren Windows
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    # Chi chay Windows. Tool chi ho tro Windows; chay Linux se do hang loat vi
+    # backslash va `_lp()` - CI do oan la rui ro R-05 trong RISK.md.
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.14 = ban di kem repo (nguoi dung chay ban nay)
+        # 3.8  = nguong toi thieu tuyen bo o BAN_GIAO.md va kiem trong .bat
+        python: ["3.14", "3.8"]
+
+    steps:
+      - name: Lay ma nguon
+        uses: actions/checkout@v4
+
+      - name: Cai Python ${{ matrix.python }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Khai bao moi truong
+        shell: bash
+        run: |
+          echo "Python: $(python --version)"
+          echo "Thu muc ffmpeg/ co trong repo khong? (mong doi: KHONG)"
+          test -d ffmpeg && echo "  CO" || echo "  KHONG - dung nhu mong doi"
+
+      - name: Chay toan bo bo kiem
+        shell: bash
+        env:
+          # Runner sach: khong bo nao duoc phep bo qua (do thuc nghiem
+          # 2026-09-11: 43/43 DAT khi khong co ffmpeg).
+          MAX_BO_QUA: "0"
+        run: python tests/chay_het.py
+
+      - name: Giu lai bao cao khi that bai
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bao-cao-that-bai-py${{ matrix.python }}
+          path: |
+            **/_BAO_CAO_THIEU.txt
+            **/_LOI_GIAO_DIEN.log
+          if-no-files-found: ignore
+          retention-days: 14

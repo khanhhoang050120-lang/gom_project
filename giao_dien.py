@@ -105,7 +105,7 @@ from ui import kiem_dau_vao as KDV   # noqa: E402
 class GiaoDien:
     def __init__(self, root):
         self.root = root
-        root.title("Goi Project CapCut -> Ban tu chua")
+        root.title("Gói Project CapCut")
         # Laptop 1366x768 chi con ~728 px vung lam viec; 775 + vien lam mat
         # 3-4 dong CUOI cua Nhat ky - dung nhung dong moi nhat (cau hoi xac
         # nhan va duong dan dich). Co lai theo man hinh that.
@@ -145,13 +145,13 @@ class GiaoDien:
         def _loi_callback(exc, val, tb):
             ct = "".join(traceback.format_exception(exc, val, tb))
             try:
-                self._ghi("! LOI GIAO DIEN:")
+                self._ghi("! LỖI GIAO DIỆN:")
                 for d in ct.splitlines():
                     self._ghi("   " + d)
             except Exception:
                 pass
             try:
-                messagebox.showerror("Loi giao dien", ct[-1500:], parent=self.root)
+                messagebox.showerror("Lỗi giao diện", ct[-1500:], parent=self.root)
             except Exception:
                 pass
         root.report_callback_exception = _loi_callback
@@ -175,7 +175,7 @@ class GiaoDien:
         ngoai.pack(fill="both", expand=True)
 
         # --- 1) Chon project ---
-        k1 = ttk.LabelFrame(ngoai, text="1) Chon project (folder draft CapCut)",
+        k1 = ttk.LabelFrame(ngoai, text="1) Chọn project (thư mục draft CapCut)",
                             padding=6)
         k1.pack(fill="x")
         hop = ttk.Frame(k1)
@@ -189,13 +189,13 @@ class GiaoDien:
 
         hang = ttk.Frame(k1)
         hang.pack(fill="x", pady=(6, 0))
-        ttk.Button(hang, text="Quet thu muc me...",
+        ttk.Button(hang, text="Quét thư mục mẹ...",
                    command=self._quet_thu_muc_me).pack(side="left")
-        ttk.Button(hang, text="Lam moi danh sach mac dinh",
+        ttk.Button(hang, text="Làm mới danh sách mặc định",
                    command=self._nap_danh_sach_mac_dinh).pack(side="left", padx=6)
 
-        ttk.Label(k1, text="Hoac DAN thang duong dan folder draft vao o duoi"
-                          " (Ctrl+V hoac chuot phai), hoac bam Chon...:").pack(
+        ttk.Label(k1, text="Hoặc DÁN thẳng đường dẫn thư mục draft vào ô dưới"
+                          " (Ctrl+V hoặc chuột phải), hoặc bấm Chọn...:").pack(
             anchor="w", pady=(8, 2))
         h2 = ttk.Frame(k1)
         h2.pack(fill="x")
@@ -207,14 +207,14 @@ class GiaoDien:
         self.v_draft = tk.StringVar(master=self.root)
         self.e_draft = ttk.Entry(h2, textvariable=self.v_draft)
         self.e_draft.pack(side="left", fill="x", expand=True)
-        ttk.Button(h2, text="Chon...", width=10,
+        ttk.Button(h2, text="Chọn...", width=10,
                    command=lambda: self._chon_thu_muc(self.v_draft,
                                                       self.e_draft)).pack(
             side="left", padx=(6, 0))
 
         # --- 2) Folder xuat ra ---
-        k2 = ttk.LabelFrame(ngoai, text="2) Folder XUAT RA (ban tu chua)"
-                                     " - bam Chon... hoac DAN duong dan vao o",
+        k2 = ttk.LabelFrame(ngoai, text="2) Thư mục XUẤT RA (bản tự chứa)"
+                                     " — bấm Chọn... hoặc DÁN đường dẫn vào ô",
                             padding=6)
         k2.pack(fill="x", pady=(8, 0))
         h3 = ttk.Frame(k2)
@@ -222,23 +222,23 @@ class GiaoDien:
         self.v_out = tk.StringVar(master=self.root)
         self.e_out = ttk.Entry(h3, textvariable=self.v_out)
         self.e_out.pack(side="left", fill="x", expand=True)
-        ttk.Button(h3, text="Chon...", width=10,
+        ttk.Button(h3, text="Chọn...", width=10,
                    command=lambda: self._chon_thu_muc(self.v_out,
                                                       self.e_out)).pack(
             side="left", padx=(6, 0))
 
         # --- 3) Do theo ten ---
         k3 = ttk.LabelFrame(
-            ngoai, text="3) Neu thieu file - do theo TEN o dau"
-                        " (nhieu thu muc cach nhau bang dau ';'"
-                        " - bo trong = chi quet o TRONG MAY)", padding=6)
+            ngoai, text="3) Nếu thiếu file — dò theo TÊN ở đâu"
+                        " (nhiều thư mục cách nhau bằng dấu ';'"
+                        " — bỏ trống = chỉ quét ổ TRONG MÁY)", padding=6)
         k3.pack(fill="x", pady=(8, 0))
         h4 = ttk.Frame(k3)
         h4.pack(fill="x")
         self.v_do = tk.StringVar(master=self.root)
         self.e_do = ttk.Entry(h4, textvariable=self.v_do)
         self.e_do.pack(side="left", fill="x", expand=True)
-        ttk.Button(h4, text="Them thu muc...", width=16,
+        ttk.Button(h4, text="Thêm thư mục...", width=16,
                    command=self._them_thu_muc_do).pack(side="left", padx=(6, 0))
         try:
             # Noi bang "; " CHU KHONG PHAI ", ": day la vi du duy nhat nguoi dung
@@ -247,14 +247,14 @@ class GiaoDien:
             o = "; ".join(str(x) for x in fixed_drives())
         except Exception:
             o = "(khong do duoc)"
-        ttk.Label(k3, text=f"O phat hien: {o}").pack(anchor="w", pady=(4, 0))
-        ttk.Label(k3, text="O MANG va USB KHONG duoc quet tu dong."
-                           " Footage nam o do thi bam 'Them thu muc...'.",
+        ttk.Label(k3, text=f"Ổ phát hiện: {o}").pack(anchor="w", pady=(4, 0))
+        ttk.Label(k3, text="Ổ MẠNG và USB KHÔNG được quét tự động."
+                           " Footage nằm ở đó thì bấm 'Thêm thư mục...'.",
                   foreground="#7a4a00").pack(anchor="w")
 
         # --- 4) Toi uu ---
         k4 = ttk.LabelFrame(
-            ngoai, text="4) Toi uu dung luong (cho nao nghi van tool tu copy nguyen)",
+            ngoai, text="4) Tối ưu dung lượng (chỗ nào nghi vấn thì tool tự copy nguyên)",
             padding=6)
         k4.pack(fill="x", pady=(8, 0))
         self.v_trim = tk.BooleanVar(master=self.root, value=True)
@@ -262,36 +262,36 @@ class GiaoDien:
         self.v_clean = tk.BooleanVar(master=self.root, value=True)
         h5 = ttk.Frame(k4)
         h5.pack(fill="x")
-        ttk.Checkbutton(h5, text="Cat gon footage dai (giu doan dung + dem ~x3)",
+        ttk.Checkbutton(h5, text="Cắt gọn footage dài (giữ đoạn dùng + đệm ~×3)",
                         variable=self.v_trim).pack(side="left")
-        ttk.Checkbutton(h5, text="Ha 4K / nen bitrate khung (H.264, giu net theo zoom)",
+        ttk.Checkbutton(h5, text="Hạ 4K / nén bitrate khung (H.264, giữ nét theo zoom)",
                         variable=self.v_scale).pack(side="left", padx=12)
-        ttk.Checkbutton(h5, text="Bo file khong dung / mo coi / lich su",
+        ttk.Checkbutton(h5, text="Bỏ file không dùng / mồ côi / lịch sử",
                         variable=self.v_clean).pack(side="left")
 
         # --- Nut dieu khien ---
         h6 = ttk.Frame(ngoai)
         h6.pack(fill="x", pady=(10, 0))
-        self.nut_quet = ttk.Button(h6, text="1) QUET", command=self._bat_dau)
+        self.nut_quet = ttk.Button(h6, text="1) QUÉT", command=self._bat_dau)
         self.nut_quet.pack(side="left")
-        self.nut_dung = ttk.Button(h6, text="Dung do", state="disabled",
+        self.nut_dung = ttk.Button(h6, text="Dừng dò", state="disabled",
                                    command=self._dung_do)
         self.nut_dung.pack(side="left", padx=6)
-        self.nut_copy = ttk.Button(h6, text="2) TIEN HANH COPY", state="disabled",
+        self.nut_copy = ttk.Button(h6, text="2) TIẾN HÀNH COPY", state="disabled",
                                    command=self._tien_hanh)
         self.nut_copy.pack(side="left")
-        self.v_trangthai = tk.StringVar(master=self.root, value="San sang.")
+        self.v_trangthai = tk.StringVar(master=self.root, value="Sẵn sàng.")
         ttk.Label(h6, textvariable=self.v_trangthai).pack(side="left", padx=12)
         # Hang doi nhieu project - mot cua so RIENG. De ben phai de khong lan
         # voi luong mot-project o ben trai.
-        ttk.Button(h6, text="Hang doi nhieu project...",
+        ttk.Button(h6, text="Hàng đợi nhiều project...",
                    command=self._mo_hang_doi).pack(side="right")
 
         # --- Nhat ky ---
         for _o in (self.e_draft, self.e_out, self.e_do):
             self._gan_menu_chuot_phai(_o)
 
-        ttk.Label(ngoai, text="Nhat ky").pack(anchor="w", pady=(10, 2))
+        ttk.Label(ngoai, text="Nhật ký").pack(anchor="w", pady=(10, 2))
         # wrap="char" chu khong "none": khong co thanh cuon ngang nen dong dai
         # (vd "Se gom ... vao <duong dan dich>") bi cat mat duoi, giau luon ten
         # folder dich ngay tai man hinh xac nhan.
@@ -475,9 +475,9 @@ class GiaoDien:
         phien = self.phien_quet
         self.dang_quet = True
         self.co_huy_quet.clear()
-        self.v_trangthai.set("Dang quet thu muc me...")
+        self.v_trangthai.set("Đang quét thư mục mẹ...")
         self.nut_quet.config(state="disabled")
-        self.nut_dung.config(state="normal", text="Dung quet")
+        self.nut_dung.config(state="normal", text="Dừng quét")
         self._ghi(f"Dang quet {d} ...")
 
         def viec():
@@ -552,9 +552,9 @@ class GiaoDien:
         self.co_huy.clear()
         self.tra_loi_tien_hanh = None
         self.nut_quet.config(state="disabled")
-        self.nut_dung.config(state="normal", text="Dung do")
+        self.nut_dung.config(state="normal", text="Dừng dò")
         self.nut_copy.config(state="disabled")
-        self.v_trangthai.set("Dang quet...")
+        self.v_trangthai.set("Đang quét...")
         self.log.config(state="normal")
         self.log.delete("1.0", "end")
         self.log.config(state="disabled")
@@ -606,23 +606,23 @@ class GiaoDien:
             # duoc 5/5 lan nhan CUOI CUNG la "Xong.", khong phan biet duoc voi
             # mot lan chay thanh cong. Hai nhanh `except` giu NGUYEN - loi that
             # phai thang nhanh huy, khong duoc bi che thanh "da huy".
-            self.hd.put(("xong", "Da huy - chua copy gi ca."
+            self.hd.put(("xong", "Đã huỷ — chưa copy gì cả."
                                  if self.co_huy.is_set() else "Xong."))
         except OSError as ex:
             sys.stdout.flush()
-            self.hd.put(("log", f"! KHONG GHI/DOC DUOC: {ex.strerror or ex}"))
-            self.hd.put(("log", "  -> Kiem lai muc 2 (folder XUAT RA): o dia co"
-                                " ton tai khong, co du cho khong, co quyen ghi"
-                                " khong."))
-            self.hd.put(("log", "  -> Neu la o mang: kiem ket noi va dang nhap."))
+            self.hd.put(("log", f"! KHÔNG GHI/ĐỌC ĐƯỢC: {ex.strerror or ex}"))
+            self.hd.put(("log", "  -> Kiểm lại mục 2 (thư mục XUẤT RA): ổ đĩa có"
+                                " tồn tại không, có đủ chỗ không, có quyền ghi"
+                                " không."))
+            self.hd.put(("log", "  -> Nếu là ổ mạng: kiểm kết nối và đăng nhập."))
             for d in traceback.format_exc().splitlines():
                 self.hd.put(("log", d))
-            self.hd.put(("xong", "CO LOI - xem Nhat ky."))
+            self.hd.put(("xong", "CÓ LỖI — xem Nhật ký."))
         except BaseException:
             sys.stdout.flush()
             for d in traceback.format_exc().splitlines():
                 self.hd.put(("log", d))
-            self.hd.put(("xong", "CO LOI - xem Nhat ky."))
+            self.hd.put(("xong", "CÓ LỖI — xem Nhật ký."))
         finally:
             try:
                 sys.stdout.flush()
@@ -649,10 +649,10 @@ class GiaoDien:
             from ui.cua_so_hang_doi import CuaSoHangDoi
         except ImportError as ex:
             messagebox.showerror(
-                "Thieu file",
-                f"Khong nap duoc phan hang doi:\n  {ex}\n\n"
-                "Co ve ban chep thieu thu muc `ui/`. Hay chep LAI CA THU MUC"
-                " cong cu.", parent=self.root)
+                "Thiếu file",
+                f"Không nạp được phần hàng đợi:\n  {ex}\n\n"
+                "Có vẻ bạn chép thiếu thư mục `ui/`. Hãy chép LẠI CẢ THƯ MỤC"
+                " công cụ.", parent=self.root)
             return
 
         cua = tk.Toplevel(self.root)
@@ -677,7 +677,7 @@ class GiaoDien:
     def _tien_hanh(self):
         self.tra_loi_tien_hanh = "y"
         self.nut_copy.config(state="disabled")
-        self.v_trangthai.set("Dang copy / toi uu...")
+        self.v_trangthai.set("Đang copy / tối ưu...")
         self.cho_tien_hanh.set()
 
     def _dung_do(self):
@@ -686,9 +686,9 @@ class GiaoDien:
         # pha gói - hai pha khong duoc lan vao nhau.
         if self.dang_quet:
             self.co_huy_quet.set()
-            self.nut_dung.config(state="disabled", text="Dang dung...")
-            self.v_trangthai.set("Dang dung quet...")
-            self.hd.put(("log", "! Da nhan lenh DUNG quet thu muc me..."))
+            self.nut_dung.config(state="disabled", text="Đang dừng...")
+            self.v_trangthai.set("Đang dừng quét...")
+            self.hd.put(("log", "! Đã nhận lệnh DỪNG quét thư mục mẹ..."))
             return
         # BA trang thai, khong phai hai. Chot cu
         #     if self.cho_tien_hanh.is_set() or self.tra_loi_tien_hanh:
@@ -699,14 +699,14 @@ class GiaoDien:
         # ("y","n")`, nen chi can kiem == "y" la du VA dung.
         if self.tra_loi_tien_hanh == "y":
             messagebox.showinfo(
-                "Dang chay",
-                "Da bat dau COPY roi - khong dung giua chung duoc.\n\n"
-                "Muon dung han thi dong cua so nay. Nhung LAN SAU:\n"
-                "  - KHONG chay lai vao CHINH thu muc xuat ra nay: tool se copy"
-                " lai tu dau VA tao them ban trung (canh1_1.mp4...), goi phinh"
-                " gap doi va lan cu thanh rac.\n"
-                "  - Hay XOA thu muc xuat ra do di, hoac chon mot thu muc MOI."
-                "\n\n(Rieng phan ma lai video o muc 4 thi phan lon duoc giu lai.)",
+                "Đang chạy",
+                "Đã bắt đầu COPY rồi — không dừng giữa chừng được.\n\n"
+                "Muốn dừng hẳn thì đóng cửa sổ này. Nhưng LẦN SAU:\n"
+                "  - KHÔNG chạy lại vào CHÍNH thư mục xuất ra này: tool sẽ copy"
+                " lại từ đầu VÀ tạo thêm bản trùng (canh1_1.mp4...), gói phình"
+                " gấp đôi và lần cũ thành rác.\n"
+                "  - Hãy XOÁ thư mục xuất ra đó đi, hoặc chọn một thư mục MỚI."
+                "\n\n(Riêng phần mã lại video ở mục 4 thì phần lớn được giữ lại.)",
                 parent=self.root)
             return
         if self.co_huy.is_set():
@@ -716,15 +716,15 @@ class GiaoDien:
         # dang doi o `_tra_loi` thi luc no tinh day va `main()` tra ve, `_chay`
         # da nhin thay co huy roi - khong thi nhan cuoi lai thanh "Xong.".
         self.co_huy.set()
-        self.nut_dung.config(state="disabled", text="Dang dung...")
-        self.v_trangthai.set("Dang dung...")
+        self.nut_dung.config(state="disabled", text="Đang dừng...")
+        self.v_trangthai.set("Đang dừng...")
         # Day qua HANG DOI (khong goi `_ghi` truc tiep) de dong nay nam DUNG thu
         # tu so voi dau ra cua thread phu. Khong co dong nay thi nguoi dung chi
         # thay mot nhan nho doi chu roi im lang, va se bam lai nhieu lan.
         self.hd.put(("log", ""))
-        self.hd.put(("log", "! Da nhan lenh DUNG - dang thoat khoi pha dang"
-                            " chay (thuong duoi 1 giay; o mang lanh co the"
-                            " vai giay)..."))
+        self.hd.put(("log", "! Đã nhận lệnh DỪNG — đang thoát khỏi pha đang"
+                            " chạy (thường dưới 1 giây; ổ mạng lạnh có thể"
+                            " vài giây)..."))
         self.tra_loi_tien_hanh = "n"
         self.cho_tien_hanh.set()
 
@@ -745,17 +745,17 @@ class GiaoDien:
                         continue      # ket qua phien CU ve muon -> bo di
                     self.dang_quet = False
                     self.nut_quet.config(state="normal")
-                    self.nut_dung.config(state="disabled", text="Dung do")
+                    self.nut_dung.config(state="disabled", text="Dừng dò")
                     self._dat_danh_sach(
-                        ds, "(Khong thay project nao trong thu muc do.)")
+                        ds, "(Không thấy project nào trong thư mục đó.)")
                     if huy:
                         self._ghi(f"Da DUNG quet theo yeu cau - moi tim duoc"
                                   f" {len(ds)} project trong {d}."
                                   f" Danh sach nay CHUA day du.")
-                        self.v_trangthai.set("Da dung quet.")
+                        self.v_trangthai.set("Đã dừng quét.")
                     else:
                         self._ghi(f"Quet {d}: tim thay {len(ds)} project.")
-                        self.v_trangthai.set("San sang.")
+                        self.v_trangthai.set("Sẵn sàng.")
                     if n_loi:
                         # KHONG duoc nuot: mot nhanh cay khong doc duoc nghia la
                         # danh sach co the THIEU project, nguoi dung phai biet.
@@ -768,12 +768,12 @@ class GiaoDien:
                         continue
                     self.dang_quet = False
                     self.nut_quet.config(state="normal")
-                    self.nut_dung.config(state="disabled", text="Dung do")
-                    self.v_trangthai.set("Khong quet duoc.")
+                    self.nut_dung.config(state="disabled", text="Dừng dò")
+                    self.v_trangthai.set("Không quét được.")
                     for dg in ct.splitlines():
                         self._ghi("   " + dg)
                     messagebox.showerror(
-                        "Loi", "Khong quet duoc thu muc do - xem Nhat ky.",
+                        "Lỗi", "Không quét được thư mục đó — xem Nhật ký.",
                         parent=self.root)
                 elif loai == "cho_tien_hanh":
                     # Luoi an toan. Voi ban va nay `main()` return TRUOC cau hoi
@@ -785,11 +785,11 @@ class GiaoDien:
                         continue
                     self.nut_copy.config(state="normal")
                     self.v_trangthai.set(
-                        "Da quet xong - xem Nhat ky roi bam 2) TIEN HANH COPY")
+                        "Đã quét xong — xem Nhật ký rồi bấm 2) TIẾN HÀNH COPY")
                 elif loai == "xong":
                     self.dang_chay = False
                     self.nut_quet.config(state="normal")
-                    self.nut_dung.config(state="disabled", text="Dung do")
+                    self.nut_dung.config(state="disabled", text="Dừng dò")
                     self.nut_copy.config(state="disabled")
                     self.v_trangthai.set(gt)
         except queue.Empty:
@@ -797,7 +797,7 @@ class GiaoDien:
         except Exception:
             # Mot loi o day KHONG duoc lam chet nhip dap vinh vien
             try:
-                self._ghi("! Loi khi cap nhat giao dien (da bo qua 1 nhip)")
+                self._ghi("! Lỗi khi cập nhật giao diện (đã bỏ qua 1 nhịp)")
             except Exception:
                 pass
         finally:
@@ -828,8 +828,8 @@ class GiaoDien:
 
     def _dong(self):
         if self.dang_chay and not messagebox.askyesno(
-                "Dang chay", "Tool dang chay. Dong cua so se DUNG giua chung.\n\n"
-                             "Van dong?", parent=self.root):
+                "Đang chạy", "Tool đang chạy. Đóng cửa sổ sẽ DỪNG giữa chừng.\n\n"
+                             "Vẫn đóng?", parent=self.root):
             return
         self._huy_nhip()
         self.root.destroy()
@@ -847,19 +847,19 @@ class CuaSoTuKiem:
         self.root = root
         self.dat = None
         self.ds = []
-        root.title("Kiem tra lan dau...")
+        root.title("Kiểm tra lần đầu...")
         root.resizable(False, False)
 
         k = ttk.Frame(root, padding=16)
         k.pack(fill="both", expand=True)
-        ttk.Label(k, text="Dang kiem tra bo cong cu (chi lam MOT LAN)",
+        ttk.Label(k, text="Đang kiểm tra bộ công cụ (chỉ làm MỘT LẦN)",
                   font=("Segoe UI", 10, "bold")).pack(anchor="w")
-        ttk.Label(k, text="Cac lan sau se vao thang giao dien.",
+        ttk.Label(k, text="Các lần sau sẽ vào thẳng giao diện.",
                   foreground="#555").pack(anchor="w", pady=(2, 10))
 
         self.thanh = ttk.Progressbar(k, length=420, maximum=len(TK.CAC_BUOC))
         self.thanh.pack(fill="x")
-        self.v_buoc = tk.StringVar(master=root, value="Dang bat dau...")
+        self.v_buoc = tk.StringVar(master=root, value="Đang bắt đầu...")
         ttk.Label(k, textvariable=self.v_buoc).pack(anchor="w", pady=(6, 0))
 
         self.o = scrolledtext.ScrolledText(k, height=9, width=62, wrap="word",
@@ -877,7 +877,7 @@ class CuaSoTuKiem:
             except Exception:
                 pass
             try:
-                messagebox.showerror("Loi khi tu kiem", ct[-1500:], parent=root)
+                messagebox.showerror("Lỗi khi tự kiểm", ct[-1500:], parent=root)
             except Exception:
                 pass
         root.report_callback_exception = _loi_callback
@@ -910,13 +910,13 @@ class CuaSoTuKiem:
                 # Ghi dau that bai KHONG duoc chan nguoi dung - chi nghia la lan
                 # sau kiem lai (ton 5 giay), khong phai loi nghiem trong.
                 self._ghi(f"(khong ghi duoc dau kiem: {ex} - lan sau se kiem lai)")
-            self.v_buoc.set("Tat ca DAT. Dang mo giao dien...")
+            self.v_buoc.set("Tất cả ĐẠT. Đang mở giao diện...")
             self.root.after(700, self.root.destroy)
         else:
-            self.v_buoc.set("CO VAN DE - xem chi tiet o tren.")
-            ttk.Button(self.nut, text="Van mo giao dien",
+            self.v_buoc.set("CÓ VẤN ĐỀ — xem chi tiết ở trên.")
+            ttk.Button(self.nut, text="Vẫn mở giao diện",
                        command=self.root.destroy).pack(side="left")
-            ttk.Button(self.nut, text="Thoat",
+            ttk.Button(self.nut, text="Thoát",
                        command=lambda: (setattr(self, "dat", None),
                                         self.root.destroy())).pack(side="left",
                                                                    padx=6)
@@ -965,7 +965,7 @@ def main():
         try:
             r = tk.Tk()
             r.withdraw()
-            messagebox.showerror("Khong mo duoc giao dien", ct[-1500:],
+            messagebox.showerror("Không mở được giao diện", ct[-1500:],
                                  parent=r)
             r.destroy()
         except Exception:

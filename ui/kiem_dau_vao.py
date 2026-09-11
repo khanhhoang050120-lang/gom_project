@@ -70,11 +70,11 @@ def kiem_draft(draft, kiem_nhanh_duoc, isdir_safe, isfile_safe, content_names):
     `Path.is_dir()` bao "khong ton tai" -> chan oan mot project hop le.
     """
     if not draft:
-        return _canh_bao("Thieu thong tin",
-                         "Hay chon folder draft CapCut o muc 1.")
+        return _canh_bao("Thiếu thông tin",
+                         "Hãy chọn thư mục draft CapCut ở mục 1.")
 
     if kiem_nhanh_duoc(draft) and not isdir_safe(Path(draft)):
-        return _chan("Sai duong dan", f"Khong thay thu muc:\n{draft}")
+        return _chan("Sai đường dẫn", f"Không thấy thư mục:\n{draft}")
 
     # Chon nham THU MUC ME (vd ...\com.lveditor.draft) la thao tac tu nhien
     # nhat, va truoc day no lam tool hoi lai vo han -> giao dien treo cung,
@@ -82,12 +82,12 @@ def kiem_draft(draft, kiem_nhanh_duoc, isdir_safe, isfile_safe, content_names):
     if (kiem_nhanh_duoc(draft)
             and not any(isfile_safe(Path(draft) / n) for n in content_names)):
         return _chan(
-            "Chua phai folder project",
-            f"Folder nay khong co draft_content.json:\n{draft}\n\n"
-            "Co ve ban dang chon THU MUC ME chua nhieu project,\n"
-            "chu khong phai MOT project.\n\n"
-            "Hay bam 'Quet thu muc me...' de liet ke cac project ben trong,\n"
-            "roi bam 1 dong trong danh sach o tren.")
+            "Chưa phải thư mục project",
+            f"Thư mục này không có draft_content.json:\n{draft}\n\n"
+            "Có vẻ bạn đang chọn THƯ MỤC MẸ chứa nhiều project,\n"
+            "chứ không phải MỘT project.\n\n"
+            "Hãy bấm 'Quét thư mục mẹ...' để liệt kê các project bên trong,\n"
+            "rồi bấm 1 dòng trong danh sách ở trên.")
     return DAT
 
 
@@ -99,32 +99,32 @@ def kiem_out(out, thu_muc_cam, kiem_nhanh_duoc, isfile_safe, tuyet_doi_that):
     .exe chung la ba cho khac nhau (xem loi/phien_ban.py).
     """
     if not out:
-        return _canh_bao("Thieu thong tin",
-                         "Hay chon folder XUAT RA o muc 2.")
+        return _canh_bao("Thiếu thông tin",
+                         "Hãy chọn thư mục XUẤT RA ở mục 2.")
 
     # "D:" KHONG phai goc o - Windows noi no vao thu muc lam viec, tuc la do ca
     # goi thang vao thu muc cong cu, VA tool van bao "XONG" (bug #23).
     # Phat hien thi phai BAO TO, khong duoc tu sua bang abspath().
     if not tuyet_doi_that(out):
         return _chan(
-            "Duong dan chua day du",
-            f"O muc 2 dang la:\n    {out}\n\n"
-            "Day chua phai duong dan day du nen Windows se hieu no theo\n"
-            "thu muc cua chinh cong cu - goi se nam sai cho.\n\n"
-            "Phai bat dau bang chu o VA dau gach, vi du:\n"
+            "Đường dẫn chưa đầy đủ",
+            f"Ở mục 2 đang là:\n    {out}\n\n"
+            "Đây chưa phải đường dẫn đầy đủ nên Windows sẽ hiểu nó theo\n"
+            "thư mục của chính công cụ — gói sẽ nằm sai chỗ.\n\n"
+            "Phải bắt đầu bằng chữ ổ VÀ dấu gạch, ví dụ:\n"
             "    D:" + chr(92) + "GOI_BAN_GIAO\n"
-            "hoac o mang:  " + chr(92) * 2 + "192.168.1.214" + chr(92) + "e"
+            "hoặc ổ mạng:  " + chr(92) * 2 + "192.168.1.214" + chr(92) + "e"
             + chr(92) + "GOI")
 
     p_out = Path(os.path.abspath(out))
     cam = {os.path.normcase(str(x)) for x in thu_muc_cam}
     if os.path.normcase(str(p_out)) in cam:
-        return _chan("Khong duoc",
-                     "Folder XUAT RA khong duoc la chinh thu muc cong cu.")
+        return _chan("Không được",
+                     "Thư mục XUẤT RA không được là chính thư mục công cụ.")
 
     if kiem_nhanh_duoc(p_out) and isfile_safe(p_out):
-        return _chan("Sai duong dan",
-                     f"Muc 2 dang tro vao mot FILE, khong phai thu muc:\n{p_out}")
+        return _chan("Sai đường dẫn",
+                     f"Mục 2 đang trỏ vào một FILE, không phải thư mục:\n{p_out}")
     return DAT
 
 
@@ -139,11 +139,11 @@ def kiem_do(do_sach, kiem_nhanh_duoc, isdir_safe):
     if not xau:
         return DAT
     return _hoi(
-        "Thu muc do khong ton tai",
-        "Cac thu muc sau o muc 3 KHONG ton tai va se bi BO QUA:\n\n  "
+        "Thư mục dò không tồn tại",
+        "Các thư mục sau ở mục 3 KHÔNG tồn tại và sẽ bị BỎ QUA:\n\n  "
         + "\n  ".join(xau)
-        + "\n\nNho: nhieu thu muc cach nhau bang dau CHAM PHAY ';'."
-          "\n\nVan chay?")
+        + "\n\nNhớ: nhiều thư mục cách nhau bằng dấu CHẤM PHẨY ';'."
+          "\n\nVẫn chạy?")
 
 
 def kiem_toi_uu(trim, scale, cleanup):
@@ -151,7 +151,7 @@ def kiem_toi_uu(trim, scale, cleanup):
     if trim or scale or cleanup:
         return DAT
     return _hoi(
-        "Khong bat toi uu nao",
-        "Ban chua tich o nao o muc 4.\n\n"
-        "Tool se copy NGUYEN BAN (an toan nhat nhung nang hon nhieu).\n"
-        "Tiep tuc?")
+        "Không bật tối ưu nào",
+        "Bạn chưa tích ô nào ở mục 4.\n\n"
+        "Tool sẽ copy NGUYÊN BẢN (an toàn nhất nhưng nặng hơn nhiều).\n"
+        "Tiếp tục?")

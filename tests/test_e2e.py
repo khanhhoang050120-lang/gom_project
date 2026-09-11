@@ -28,6 +28,14 @@ sys.path.insert(0, str(HERE.parent))
 
 from draft_gia import tao_draft_gia          # noqa: E402
 import chay_tool                             # noqa: E402
+import nghiem_thu_goi as NT                  # noqa: E402
+#  ^ VERIFIER DOC LAP. Cac phep kiem ben duoi dung `G.iter_json_files`,
+#    `G.deep_walk_strings`, `G.is_real_abs` - tuc la HAM CUA CHINH TOOL.
+#    Neu tool hieu sai dinh dang CapCut, no ghi sai theo dung cai hieu sai
+#    do roi tu kiem lai bang chinh ham da hieu sai -> bo kiem XANH trong
+#    khi goi HONG. `nghiem_thu_goi` viet tu dau, khong import gi cua tool,
+#    nen no hoi mot cau KHAC HAN: 'mot chuong trinh khac, khong biet gi ve
+#    tool, co mo duoc goi nay khong?'
 
 pas = fail = 0
 
@@ -114,6 +122,42 @@ def kich_ban_binh_thuong(ffmpeg, ffprobe):
 
         kiem_hai_file_noi_dung(out)
         kiem_subdraft_nhieu_tang(out, draft)
+
+        # --- NGHIEM THU DOC LAP (V-1..V-4) ---
+        kq = NT.nghiem_thu(out)
+        check("V-0 verifier doc lap kiem duoc tham chieu THAT (N > 0)",
+              kq.tong_tham_chieu > 0,
+              "quet 0 tham chieu -> khong ket luan duoc gi (bug #36)")
+        check("V-1 khong con duong dan TUYET DOI trong goi",
+              not kq.tuyet_doi,
+              "\n".join(f"{f.name} :: {k} = {v}"
+                        for f, k, v in kq.tuyet_doi[:8]))
+        check("V-2 moi tham chieu phan giai duoc toi file co that",
+              not kq.khong_phan_giai,
+              "\n".join(f"{f.name} :: {k} = {v}"
+                        for f, k, v in kq.khong_phan_giai[:8]))
+        check("V-2 khong co file media RONG (0 byte)", not kq.rong,
+              "\n".join(f"{f.name} :: {v}" for f, k, v in kq.rong[:8]))
+        check("V-3 de quy duoc vao subdraft (tim thay > 1 draft root)",
+              len(kq.draft_root) > 1, f"chi thay {len(kq.draft_root)} root")
+        check("V-4 moi .json parse duoc sau khi tool ghi lai",
+              not kq.json_hong,
+              "\n".join(f"{f.name}: {e}" for f, e in kq.json_hong[:8]))
+
+        # --- PHEP THU DI CHUYEN: bang chung TU CHUA that su ---
+        #  Mo goi tai CHO CU khong chung minh duoc gi - duong dan tuyet doi
+        #  cu van resolve duoc tren chinh may nay (checklist bug.md: "chung
+        #  minh tu chua phai bang cach DOI CHO goi roi verify lai").
+        cho_moi = tmp / "DA_DOI_CHO" / "sau_khi_chuyen"
+        cho_moi.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(out, cho_moi)
+        kq2 = NT.nghiem_thu(cho_moi)
+        check("DI CHUYEN: goi van TU CHUA sau khi doi cho", kq2.dat(),
+              f"tuyet_doi={len(kq2.tuyet_doi)}"
+              f" khong_pg={len(kq2.khong_phan_giai)} rong={len(kq2.rong)}")
+        check("DI CHUYEN: van kiem dung so tham chieu nhu truoc",
+              kq2.tong_tham_chieu == kq.tong_tham_chieu,
+              f"{kq2.tong_tham_chieu} vs {kq.tong_tham_chieu}")
 
         # --- Media phai duoc gom sang dich ---
         n_goc = dem_media(mo_ta["footage_dir"]) + dem_media(draft)
@@ -427,7 +471,8 @@ def main():
     import toi_uu_dung_luong as TU
     ffmpeg, ffprobe = TU.ff_paths(HERE.parent)
     if not ffmpeg:
-        print("KHONG tim thay ffmpeg -> bo qua E2E")
+        print("KET QUA: 0 PASS / 0 FAIL")
+        print("BO QUA: khong tim thay ffmpeg/ffprobe - E2E can ma hoa media that")
         return 2
     kich_ban_binh_thuong(ffmpeg, ffprobe)
     kich_ban_thieu_file(ffmpeg, ffprobe)
@@ -435,7 +480,7 @@ def main():
     kich_ban_chan_ghi_de_goc(ffmpeg, ffprobe)
     print()
     print("=" * 72)
-    print(f"KET QUA E2E: {pas} PASS / {fail} FAIL")
+    print(f"KET QUA: {pas} PASS / {fail} FAIL")
     print("=" * 72)
     return 1 if fail else 0
 

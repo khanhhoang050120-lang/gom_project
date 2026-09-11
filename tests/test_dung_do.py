@@ -279,7 +279,7 @@ def t6_giao_dien_nut_va_nhan():
         check("bam Dung -> nut tu xam", str(g.nut_dung["state"]) == "disabled",
               f"state={g.nut_dung['state']}")
         check("bam Dung -> nhan nut doi thanh 'Dang dung...'",
-              "Dang dung" in str(g.nut_dung["text"]), str(g.nut_dung["text"]))
+              "dừng" in str(g.nut_dung["text"]).lower(), str(g.nut_dung["text"]))
         check("bam Dung -> tra loi 'n' cho cau hoi Tien hanh",
               g.tra_loi_tien_hanh == "n")
 
@@ -323,12 +323,12 @@ def t7_nhan_ket_thuc():
           'if self.co_huy.is_set() else "Xong."' in src,
           "ket thuc bang 'Xong.' sau khi huy la mot dang bao cao sai 'da xong'")
     check("co nhan rieng cho duong huy",
-          "Da huy - chua copy gi ca." in src, "")
+          "Đã huỷ — chưa copy gì cả." in src, "")
     check("hai nhanh except GIU NGUYEN (loi that phai thang nhanh huy)",
-          'self.hd.put(("xong", "CO LOI - xem Nhat ky."))' in src,
+          'self.hd.put(("xong", "CÓ LỖI — xem Nhật ký."))' in src,
           "boc `finally` bang co huy se che mat loi that")
     check("nut Dung do duoc tra lai nhan khi xong",
-          'self.nut_dung.config(state="disabled", text="Dung do")' in src, "")
+          'self.nut_dung.config(state="disabled", text="Dừng dò")' in src, "")
 
 
 # ---------------------------------------------------------------- T8

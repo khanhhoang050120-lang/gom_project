@@ -1388,7 +1388,9 @@ while time.time() - t0 < 1.0:
 kq["thread chinh VAN CHAY trong luc quet"] = nhip[0] >= 10
 kq["_nhip"] = nhip[0]
 kq["nut QUET bi xam trong luc quet"] = str(g.nut_quet["state"]) == "disabled"
-kq["nut Dung doi nhan sang 'Dung quet'"] = "quet" in str(g.nut_dung["text"]).lower()
+# Do "qu" chu khong "quet": nhan da doi sang "Dung quet" co dau, ma
+# `.lower()` KHONG bo dau -> "quet" khong con khop "quet" co dau.
+kq["nut Dung doi nhan sang 'Dung quet'"] = "qu" in str(g.nut_dung["text"]).lower()
 
 g._dung_do()
 kq["bam Dung khi dang quet -> dat co_huy_quet"] = g.co_huy_quet.is_set()

@@ -99,12 +99,19 @@ def test_ff_paths(TU):
     print("E2 - ff_paths() uu tien ban ffmpeg DI KEM tool")
     print("=" * 72)
     ff, fp = TU.ff_paths()
-    check("tim duoc ffmpeg", bool(ff), "may nay khong co ffmpeg?")
-    if ff:
-        di_kem = str(ROOT / "ffmpeg" / "bin" / "ffmpeg.exe")
-        check("dung ban DI KEM tool, khong phai ban trong PATH",
-              os.path.normcase(ff) == os.path.normcase(di_kem),
-              f"dang dung: {ff}")
+    di_kem = ROOT / "ffmpeg" / "bin" / "ffmpeg.exe"
+    if di_kem.is_file():
+        check("tim duoc ffmpeg", bool(ff), "may nay khong co ffmpeg?")
+        if ff:
+            check("dung ban DI KEM tool, khong phai ban trong PATH",
+                  os.path.normcase(ff) == os.path.normcase(str(di_kem)),
+                  f"dang dung: {ff}")
+    else:
+        # Runner CI sach khong co thu muc ffmpeg/ (bi .gitignore vi 195 MB).
+        # Phep kiem "phai dung ban DI KEM" khong con y nghia o do - nhung
+        # KHONG duoc im lang bo qua (R-05 + nhom D trong bug.md).
+        print("  (bo qua 'uu tien ban di kem': khong co ffmpeg/bin/ffmpeg.exe"
+              " - runner sach)")
 
     # Danh sach goc tim kiem phai co thu muc chua .exe khi da dong goi
     goc_thuong = [str(x) for x in TU._cac_goc_ffmpeg()]

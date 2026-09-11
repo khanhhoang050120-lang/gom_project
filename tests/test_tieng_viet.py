@@ -140,6 +140,6 @@ check("bat_buoc=True cung khong nem", ep_utf8(bat_buoc=True) is True)
 
 print()
 print("=" * 70)
-print(f"  PASS {pas}   FAIL {fail}")
+print(f"KET QUA: {pas} PASS / {fail} FAIL")
 print("=" * 70)
 sys.exit(1 if fail else 0)

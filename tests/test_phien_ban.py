@@ -91,8 +91,12 @@ check("thu_muc_chuong_trinh() = goc repo",
       f"tra ve {PB.thu_muc_chuong_trinh()}, mong {ROOT}")
 check("thu_muc_tai_nguyen() = goc repo", PB.thu_muc_tai_nguyen() == ROOT)
 check("tim duoc chung.py", PB.tim_tai_nguyen("chung.py") is not None)
-check("tim duoc ffmpeg/bin/ffmpeg.exe",
-      PB.tim_tai_nguyen("ffmpeg/bin/ffmpeg.exe") is not None)
+if (ROOT / "ffmpeg" / "bin" / "ffmpeg.exe").is_file():
+    check("tim duoc ffmpeg/bin/ffmpeg.exe",
+          PB.tim_tai_nguyen("ffmpeg/bin/ffmpeg.exe") is not None)
+else:
+    # Runner CI sach: thu muc ffmpeg/ bi .gitignore. Noi ro thay vi do oan.
+    print("  (bo qua 'tim duoc ffmpeg': khong co ffmpeg/ - runner sach)")
 check("file khong co -> None (khong nem)",
       PB.tim_tai_nguyen("khong_he_co_file_nay.xyz") is None)
 
@@ -173,6 +177,6 @@ check("co noi dung, co nhac duong dan", bool(mt) and str(ROOT) in mt, mt)
 
 print()
 print("=" * 64)
-print(f"  PASS {pas}   FAIL {fail}")
+print(f"KET QUA: {pas} PASS / {fail} FAIL")
 print("=" * 64)
 sys.exit(1 if fail else 0)

@@ -79,7 +79,7 @@ kq = KDV.kiem_draft(me, kn, isd, isf, CONTENT_NAMES)
 check("chon nham THU MUC ME -> chan",
       not kq.ok and kq.muc == "chan", repr(kq))
 check("loi huong dan bam 'Quet thu muc me'",
-      "Quet thu muc me" in kq.noi_dung, kq.noi_dung)
+      "Quét thư mục mẹ" in kq.noi_dung, kq.noi_dung)
 
 # draft_info.json cung duoc chap nhan
 kn, isd, isf = gia([D], [Path(D) / "draft_info.json"])
@@ -110,7 +110,7 @@ for xau in ("D:", "GOI", r"..\GOI", "goi_ban_giao"):
 
 kq = KDV.kiem_out("D:", CAM, kn, isf, tuyet_doi_that)
 check("loi giai thich ro hau qua (goi nam sai cho)",
-      "sai cho" in kq.noi_dung, kq.noi_dung)
+      "sai chỗ" in kq.noi_dung, kq.noi_dung)
 
 # Chinh thu muc cong cu
 kq = KDV.kiem_out(CAM[0], CAM, kn, isf, tuyet_doi_that)
@@ -148,7 +148,7 @@ check("loi neu dung thu muc nao mat",
       "Da_rut_USB" in kq.noi_dung, kq.noi_dung)
 check("loi KHONG bao nham thu muc con song",
       "Footage" not in kq.noi_dung, kq.noi_dung)
-check("nhac dau CHAM PHAY", "CHAM PHAY" in kq.noi_dung, kq.noi_dung)
+check("nhac dau CHAM PHAY", "CHẤM PHẨY" in kq.noi_dung, kq.noi_dung)
 
 check("bo trong muc 3 -> DAT (chi quet o trong may)",
       KDV.kiem_do("", kn, isd).ok)
@@ -162,7 +162,7 @@ kq = KDV.kiem_toi_uu(False, False, False)
 check("khong bat gi -> HOI, khong chan",
       not kq.ok and kq.hoi is True, repr(kq))
 check("loi noi ro hau qua (nang hon nhieu)",
-      "nang hon" in kq.noi_dung, kq.noi_dung)
+      "nặng hơn" in kq.noi_dung, kq.noi_dung)
 
 # ------------------------------------------------- phan biet chan vs hoi
 print("\nPHAN BIET 'chan' voi 'hoi' (sai la chan oan nguoi dung)")
@@ -178,6 +178,6 @@ check("muc 2 duong dan sai PHAI la 'chan' (bug #23)",
 
 print()
 print("=" * 68)
-print(f"  PASS {pas}   FAIL {fail}")
+print(f"KET QUA: {pas} PASS / {fail} FAIL")
 print("=" * 68)
 sys.exit(1 if fail else 0)
