@@ -303,146 +303,107 @@ def test_tuy_chon_di_vao_opts():
 
 
 def test_chay_tron_mot_luot():
+    """E2E: dung giao dien that goi mot draft gia tu dau den cuoi.
 
-    print()
+    CHAY O TIEN TRINH RIENG - bug #100 va #110.
 
-    print("=" * 72)
+    Ham nay tao mot root Tk VA goi ffmpeg. 14 ham truoc no trong cung file
+    cung tao root Tk. Chay chung mot tien trinh thi den luot no, so root Tk
+    tich tu du nhieu de `Tcl_AsyncDelete: async handler deleted by the wrong
+    thread` giet CA TIEN TRINH - truoc khi kip in dong "KET QUA", nen
+    `chay_het.py` doc la THAT BAI du moi phep kiem deu dat.
 
-    print("CHAY TRON MOT LUOT tren draft gia (khong chi ve giao dien)")
-
-    print("=" * 72)
-
+    Do that tren CI 2026-09-11: bo GIAO DIEN chet sau 12,6 giay, khong mot
+    dong KET QUA nao. Tren may phat trien no qua - vi thu tu thu gom rac
+    khac nhau, dung kieu "chay rieng thi qua, chay chung thi chet" ma #100
+    da canh bao.
+    """
     if not co_tkinter():
-
         print("  (khong co tkinter -> bo qua)")
-
         return
-
     import toi_uu_dung_luong as TU
-
     ffmpeg, ffprobe = TU.ff_paths(ROOT)
-
     if not ffmpeg:
-
         print("  (khong co ffmpeg -> bo qua)")
-
         return
 
+    than = r"""
+import shutil, sys, tempfile, time
+from pathlib import Path
+GOC = Path(r"__GOC__")
+sys.path.insert(0, str(GOC))
+sys.path.insert(0, str(GOC / "tests"))
+import tkinter as tk
+import toi_uu_dung_luong as TU
+import giao_dien
+from draft_gia import tao_draft_gia
 
+kq = {}
+ffmpeg, ffprobe = TU.ff_paths(GOC)
+tmp = Path(tempfile.mkdtemp(prefix="gui_e2e_"))
+root = tk.Tk()
+root.withdraw()
+try:
+    mo = tao_draft_gia(tmp, ffmpeg, ffprobe)
+    draft = Path(mo["draft_dir"])
+    out = tmp / "GOI_RA"
 
-    import tkinter as tk
+    g = giao_dien.GiaoDien(root)
+    g.v_draft.set(str(draft))
+    g.v_out.set(str(out))
+    g.v_do.set(str(tmp))          # KHONG de trong (bug #27)
+    g.v_trim.set(True); g.v_scale.set(True); g.v_clean.set(True)
+    g._bat_dau()
 
-    import giao_dien
+    # Bam "TIEN HANH COPY" NGAY TRONG VONG LAP CHINH.
+    # KHONG duoc doi o mot thread phu roi doc `g.nut_copy["state"]`: doc
+    # thuoc tinh cua widget tkinter tu thread phu cung nem "main thread is
+    # not in main loop".
+    t0 = time.time()
+    da_bam = False
+    while g.dang_chay and time.time() - t0 < 300:
+        root.update()
+        if not da_bam and str(g.nut_copy["state"]) == "normal":
+            g._tien_hanh()
+            da_bam = True
+        time.sleep(0.05)
 
-    from draft_gia import tao_draft_gia
-
-
-
-    tmp = Path(tempfile.mkdtemp(prefix="gui_e2e_"))
-
-    root = _nho(tk.Tk())
-
-    root.withdraw()
-
+    van = g.log.get("1.0", "end")
+    kq["da bam duoc nut TIEN HANH COPY"] = da_bam
+    kq["chay xong trong thoi gian cho"] = not g.dang_chay
+    kq["co di qua buoc hoi 'Tien hanh?'"] = "Tien hanh" in van
+    kq["tao ra folder xuat"] = out.is_dir()
+    kq["co file bao cao"] = (out / "_BAO_CAO_THIEU.txt").is_file()
+    kq["nhat ky co ket luan"] = "Ban tu chua" in van
+    kq["khong co traceback trong nhat ky"] = "Traceback" not in van
+    kq["sys.stdout da duoc tra lai sau khi chay"] = not isinstance(
+        sys.stdout, giao_dien.Ong)
+    kq["_duoi_nhat_ky"] = van[-400:]
+finally:
     try:
-
-        mo = tao_draft_gia(tmp, ffmpeg, ffprobe)
-
-        draft = Path(mo["draft_dir"])
-
-        out = tmp / "GOI_RA"
-
-
-
-        g = _nho(giao_dien.GiaoDien(root))
-
-        g.v_draft.set(str(draft))
-
-        g.v_out.set(str(out))
-
-        g.v_do.set(str(tmp))          # KHONG de trong (bug #27)
-
-        g.v_trim.set(True); g.v_scale.set(True); g.v_clean.set(True)
-
-
-
-        g._bat_dau()
-
-
-
-        # Bam "TIEN HANH COPY" NGAY TRONG VONG LAP CHINH.
-
-        # KHONG duoc doi o mot thread phu roi doc `g.nut_copy["state"]`: doc
-
-        # thuoc tinh cua widget tkinter tu thread phu cung nem "main thread is
-
-        # not in main loop" - dung loi vua sua trong `giao_dien.py`.
-
-        t0 = time.time()
-
-        da_bam = False
-
-        while g.dang_chay and time.time() - t0 < 300:
-
-            root.update()
-
-            if not da_bam and str(g.nut_copy["state"]) == "normal":
-
-                g._tien_hanh()
-
-                da_bam = True
-
-            time.sleep(0.05)
-
-        check("da bam duoc nut TIEN HANH COPY", da_bam,
-
-              "nut khong bao gio bat len -> tool khong den buoc hoi")
-
-
-
-        van = g.log.get("1.0", "end")
-
-        check("chay xong trong thoi gian cho", not g.dang_chay,
-
-              f"van con chay sau {time.time()-t0:.0f}s")
-
-        check("co di qua buoc hoi 'Tien hanh?'", "Tien hanh" in van,
-
-              van[-400:])
-
-        check("tao ra folder xuat", out.is_dir(), f"khong thay {out}")
-
-        check("co file bao cao", (out / "_BAO_CAO_THIEU.txt").is_file())
-
-        check("nhat ky co ket luan", "Ban tu chua" in van, van[-400:])
-
-        check("khong co traceback trong nhat ky", "Traceback" not in van,
-
-              van[-600:])
-
-
-
-        # stdout PHAI duoc tra lai
-
-        check("sys.stdout da duoc tra lai sau khi chay",
-
-              not isinstance(sys.stdout, giao_dien.Ong),
-
-              "khong tra lai -> moi print sau nay bay vao giao dien da dong")
-
-    finally:
-
         root.destroy()
+    except Exception:
+        pass
+    shutil.rmtree(tmp, ignore_errors=True)
 
-        shutil.rmtree(tmp, ignore_errors=True)
+import json
+print("KQ_JSON " + json.dumps(kq, ensure_ascii=False))
+""".replace("__GOC__", str(ROOT))
 
+    ma, ra = _chay_con(than, gio=300)
+    check("tien trinh con chay xong (khong crash)", ma == 0,
+          f"ma thoat {ma}\n{ra[-1200:]}")
 
+    dong = [d for d in ra.splitlines() if d.startswith("KQ_JSON ")]
+    if not dong:
+        check("doc duoc ket qua tu tien trinh con", False, ra[-1200:])
+        return
+    import json as _json
+    kq = _json.loads(dong[-1][len("KQ_JSON "):])
+    duoi = kq.pop("_duoi_nhat_ky", "")
+    for ten, dat in kq.items():
+        check(ten, dat, duoi if not dat else "")
 
-
-
-
-
-# ---------------------------------------------------------------- tien ich
 
 def _chay_con(than, gio=180):
 

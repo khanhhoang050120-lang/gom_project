@@ -2230,6 +2230,39 @@ Hậu quả: người dùng bấm "Cập nhật", tool **thấy** bản mới, n
   - **Bộ kiểm dùng dữ liệu tự chế chỉ kiểm được trí tưởng tượng của người viết.** JSON giả `{"url_tai": ...}` khớp hoàn hảo với code sai, vì cả hai do cùng một người nghĩ ra. Khi code đọc dữ liệu từ một API bên ngoài, **phải lấy một mẫu thật** — dù chỉ một lần, dù phải `curl` bằng tay.
   - **Một tính năng "đã viết xong" mà chưa bao giờ chạy hết đường thì chưa xong.** `cap_nhat.py` có 43 phép kiểm, tất cả đều xanh, nhưng cả chuỗi *"hỏi API → tìm URL → tải về"* chưa lần nào chạy trên dữ liệu thật. Bug nằm đúng ở mắt xích không ai đi qua.
 
+### 110. bug #100 tái diễn — phép kiểm E2E giao diện giết cả tiến trình, và **ffmpeg là thứ che nó suốt**
+- **Ngày:** 2026-09-11
+- **Mức độ:** 🔴 High (chặn workflow build, nên không phát hành được .exe)
+- **Vị trí:** `tests/test_giao_dien.py` — `test_chay_tron_mot_luot()`.
+
+**Triệu chứng:** workflow "Phat hanh .exe" đỏ ở bước "Dong goi". Log cho thấy bộ `GIAO DIEN` chạy **12,6 giây rồi chết không in một dòng `KET QUA` nào** — `chay_het.py` đọc là THẤT BẠI, `build.py` dừng ở bước 1 và không đóng gói.
+
+Triệu chứng khớp **chính xác** #100: chết *trước* khi kịp in kết quả.
+
+**Nguyên nhân gốc:** `test_chay_tron_mot_luot()` dựng một root Tk **trong cùng tiến trình** với 14 hàm khác cũng dựng root Tk, và nó là hàm **cuối cùng** — đúng lúc số root tích tụ đủ để `Tcl_AsyncDelete: async handler deleted by the wrong thread` giết cả tiến trình.
+
+**Vì sao mãi tới giờ mới lộ — đây mới là phần đáng ghi nhớ:**
+
+Hàm này mở đầu bằng
+
+```python
+if not ffmpeg:
+    print("  (khong co ffmpeg -> bo qua)")
+    return
+```
+
+Ba lần CI trước **không có ffmpeg** nên nó thoát ngay ở dòng 3, không dựng root Tk nào. Lần này workflow build **tải ffmpeg về** → hàm chạy thật → chết.
+
+Nói cách khác: một phép kiểm nặng nhất của cả bộ đã **ngủ đông suốt trong CI**, và chỉ thức dậy đúng lúc nó chặn đường phát hành.
+
+**Cách sửa:** chuyển sang `_chay_con()` — tiện ích **đã có sẵn** trong chính file này, dựng riêng cho khuôn mà #100 chốt. Tiến trình con dựng root Tk của nó rồi chết cùng tiến trình, không để lại biến tkinter mồ côi cho ai.
+
+- **Cách kiểm chứng:** `tests\test_giao_dien.py` → **100 PASS / 0 FAIL** (tăng một phép kiểm: *"tiến trình con chạy xong (không crash)"* — nó chốt luôn cái crash này, nên lần sau tái diễn sẽ báo rõ thay vì chết im). `chay_het.py` 47/47 ĐẠT.
+- **Bài học:**
+  - **Một phép kiểm "bỏ qua" là một phép kiểm KHÔNG CHẠY.** Ba lần CI xanh dòng `GIAO DIEN` không chứng minh gì về E2E giao diện — nó bỏ qua vì thiếu ffmpeg. Bỏ qua im lặng che được lỗi **vô thời hạn**, và lỗi chọn đúng lúc bất tiện nhất để lộ ra.
+  - **Bug đã sửa một lần vẫn quay lại ở phép kiểm viết sau.** #100 sửa bằng cách chuyển các phép kiểm dựng root Tk sang tiến trình riêng; hàm này viết sau, không theo khuôn đó, và không ai để ý vì nó luôn bỏ qua. Khi một file đã có `_chay_con()`, mọi hàm dựng root Tk **phải** dùng nó — đây là quy tắc của file, không phải tuỳ chọn.
+  - **Hai môi trường CI khác nhau kiểm hai tập phép kiểm khác nhau.** Job "Kiem thu" (không ffmpeg) và job "Phat hanh" (có ffmpeg) chạy tập khác hẳn. Xanh ở một job không suy ra được gì về job kia.
+
 ---
 
 ## Checklist nhanh khi viết/sửa code (rút ra từ các bug trên)

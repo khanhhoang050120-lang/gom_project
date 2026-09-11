@@ -1,6 +1,6 @@
 # GÓI PROJECT CAPCUT — Tài liệu bàn giao
 
-**Phiên bản 2.0.1** · Python 3.14.6 đi kèm · ffmpeg đi kèm
+**Phiên bản 2.0.2** · Python 3.14.6 đi kèm · ffmpeg đi kèm
 
 Tài liệu này dành cho **người nhận công cụ**. Cách chạy từng bước xem
 `HUONG_DAN_GOI_PROJECT.md`. Ở đây chỉ nói ba việc:
@@ -304,7 +304,7 @@ mặc định**, không chết.
 
 ## 6. Dành cho người bảo trì
 
-- **`bug.md` là nhật ký lỗi** — 109 mục, mỗi mục có Triệu chứng → Nguyên nhân gốc
+- **`bug.md` là nhật ký lỗi** — 110 mục, mỗi mục có Triệu chứng → Nguyên nhân gốc
   → Cách sửa → Cách kiểm chứng → Bài học. Đọc phần **"Checklist nhanh"** ở cuối
   trước khi sửa bất kỳ dòng code nào.
 - **`CLAUDE.md`** ghi quy tắc bắt buộc, gồm cả cách làm việc khi nhiều người cùng
