@@ -2162,6 +2162,37 @@ may thuong                                          -> 47/47 DAT
   - **Sửa biến môi trường ở tiến trình cha KHÔNG chạm được tiến trình con.** `sys.stdout.reconfigure()` chỉ sống trong tiến trình gọi nó. Muốn con thừa hưởng thì phải truyền qua `env`.
   - **Sửa một nửa rồi tưởng xong là chính cái bẫy mục này cảnh báo.** Tôi sửa phép kiểm thứ nhất của `DONG GOI` mà bỏ qua phép kiểm thứ hai ngay dưới nó — trong cùng một hàm, cùng một loại lỗi. Khi sửa một chỗ, **grep cả file** xem còn chỗ nào cùng dạng.
 
+### 108. `Path.resolve()` ném trên Python 3.8 với đường dẫn có ký tự cấm — bug thật trong code phát hành
+- **Ngày:** 2026-09-11
+- **Mức độ:** 🔴 High (tool chết ngay lúc khởi động, và dưới `pythonw` thì chết **im lặng**)
+- **Vị trí:** `loi/phien_ban.py` — `thu_muc_chuong_trinh()`, `thu_muc_tai_nguyen()`, `cac_thu_muc_tai_nguyen()`.
+
+**Triệu chứng:** CI job **Python 3.14 XANH**, job **Python 3.8 ĐỎ**:
+
+```
+OSError: [WinError 123] The filename, directory name, or volume label syntax
+is incorrect: 'C:...\ten<cam>|:\GoiProjectCapCut.exe'
+```
+
+**Nguyên nhân gốc:** trên Python 3.8, `Path.resolve()` gọi `_getfinalpathname()` và **ném `OSError`** khi đường dẫn chứa ký tự cấm (`< > | :`). Từ 3.13 nó trả về nguyên chuỗi, không ném — nên lỗi này **chỉ lộ trên máy cũ**.
+
+**Đây không chỉ là lỗi của bộ kiểm.** Bộ kiểm chỉ *phát hiện* ra nó. `thu_muc_chuong_trinh()` là hàm chạy ở **mọi lần khởi động**: nếu người dùng cài tool vào một đường dẫn lạ, nó ném ngay — và dưới `pythonw` thì đúng triệu chứng tệ nhất, *"bấm đúp không thấy gì"*.
+
+**Cách sửa:** `_resolve_an_toan()` — `resolve()` bọc `try/except (OSError, ValueError, RuntimeError)`, không resolve được thì **trả về đường dẫn như cũ** (vẫn dùng được cho `.parent`, chỉ là không bung được tên ngắn 8.3). Áp cho cả ba hàm.
+
+**Lỗi thứ hai cùng lần, mỉa mai hơn:** `tests/test_khong_dependency.py` **liệt kê `sys.stdlib_module_names` trong `CAN_BAN_MOI` là API cần 3.10** (dòng 64) rồi **tự dùng chính nó** ở dòng 92. Nó kiểm tra tool nhưng không tự kiểm.
+
+Sửa: `_tap_module_chuan()` — dùng `sys.stdlib_module_names` khi có, còn 3.8/3.9 thì lui về `sys.builtin_module_names` cộng quét thư mục `lib/` của chính bản Python đang chạy. **Không gõ tay danh sách** — chính file này đã ghi bài học "danh sách gõ tay đã lạc hậu BA lần".
+
+- **Cách kiểm chứng:** giả lập 3.8 bằng cách `del sys.stdlib_module_names`:
+  - đường lui tìm được **261 module**, không sót cái nào tool dùng (`os`, `json`, `pathlib`, `tkinter`, `subprocess`, `ctypes`)
+  - vẫn **bắt được** thư viện ngoài: `requests`, `numpy`, `pandas`, `pillow`, `PyQt5` đều bị coi là ngoài → bộ kiểm không bị nới lỏng
+  - `tests\chay_het.py` → 47/47 ĐẠT
+- **Bài học:**
+  - **Ma trận CI nhiều phiên bản Python không phải để cho đẹp.** Job 3.8 bắt được một bug thật trong code phát hành mà job 3.14 hoàn toàn mù — vì hành vi của `resolve()` đã đổi giữa hai bản. Chạy trên **bản thấp nhất mình tuyên bố hỗ trợ** là cách duy nhất biết mình có thật sự hỗ trợ nó không.
+  - **Một bộ kiểm tự vi phạm điều nó cấm là điểm mù kinh điển.** Nó liệt kê `stdlib_module_names` là API cần 3.10 rồi tự gọi — và chỉ lộ khi CI chạy trên đúng bản Python đó. Khi viết bộ kiểm về "không được dùng X", hỏi ngay: *"chính tôi có đang dùng X không?"*
+  - **`resolve()` là hàm có thể NÉM**, không phải phép biến đổi chuỗi thuần. Mọi chỗ gọi nó trên đường dẫn đến từ bên ngoài (`sys.executable`, đối số người dùng) đều cần đường lui.
+
 ---
 
 ## Checklist nhanh khi viết/sửa code (rút ra từ các bug trên)

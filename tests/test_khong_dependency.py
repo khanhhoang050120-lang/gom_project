@@ -15,6 +15,7 @@ duoc dung cu phap / API chi co o ban moi hon.
 from __future__ import annotations
 
 import ast
+import os
 import sys
 from pathlib import Path
 
@@ -68,6 +69,33 @@ CAN_BAN_MOI = {
 }
 
 
+def _tap_module_chuan():
+    """Tap ten module thuoc THU VIEN CHUAN, chay duoc tu Python 3.8.
+
+    3.10+  : dung `sys.stdlib_module_names` (chinh xac nhat)
+    3.8/3.9: dung `sys.builtin_module_names` + quet thu muc `lib/` cua chinh
+             ban Python dang chay. KHONG go tay danh sach - go tay se lac hau.
+    """
+    ten = getattr(sys, "stdlib_module_names", None)
+    if ten:
+        return set(ten)
+
+    ra = set(sys.builtin_module_names)
+    import sysconfig
+    for khoa in ("stdlib", "platstdlib"):
+        thu_muc = sysconfig.get_paths().get(khoa)
+        if not thu_muc or not os.path.isdir(thu_muc):
+            continue
+        for t in os.listdir(thu_muc):
+            duong = os.path.join(thu_muc, t)
+            if t.endswith(".py"):
+                ra.add(t[:-3])
+            elif os.path.isdir(duong) and os.path.isfile(
+                    os.path.join(duong, "__init__.py")):
+                ra.add(t)
+    return ra
+
+
 def cac_file_tool():
     """Chi file THUOC TOOL - khong tinh tests/ (tests khong di kem may con).
 
@@ -89,7 +117,15 @@ def main():
     print("Tool chi dung THU VIEN CHUAN (dieu kien de may con khong phai cai gi)")
     print("=" * 72)
 
-    chuan = set(sys.stdlib_module_names)
+    # `sys.stdlib_module_names` CHI CO tu 3.10 - ma chinh bo kiem nay liet ke
+    # no trong `CAN_BAN_MOI` la API can 3.10. Tu dung mot API minh dang cam
+    # la mia mai, va no lam CI do tren job Python 3.8 (nguong toi thieu tuyen
+    # bo o BAN_GIAO.md).
+    #
+    # Tren 3.8 lui ve `sys.builtin_module_names` + danh sach module chuan doc
+    # tu thu muc `lib/` cua chinh ban Python dang chay - khong go tay danh
+    # sach, vi go tay se lac hau (bai hoc o ngay dong 40 file nay).
+    chuan = _tap_module_chuan()
     ngoai = {}
     for p in cac_file_tool():
         try:

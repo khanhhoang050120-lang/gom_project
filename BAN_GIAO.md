@@ -304,7 +304,7 @@ mặc định**, không chết.
 
 ## 6. Dành cho người bảo trì
 
-- **`bug.md` là nhật ký lỗi** — 107 mục, mỗi mục có Triệu chứng → Nguyên nhân gốc
+- **`bug.md` là nhật ký lỗi** — 108 mục, mỗi mục có Triệu chứng → Nguyên nhân gốc
   → Cách sửa → Cách kiểm chứng → Bài học. Đọc phần **"Checklist nhanh"** ở cuối
   trước khi sửa bất kỳ dòng code nào.
 - **`CLAUDE.md`** ghi quy tắc bắt buộc, gồm cả cách làm việc khi nhiều người cùng

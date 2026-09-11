@@ -45,6 +45,29 @@ def da_dong_goi() -> bool:
     return bool(getattr(sys, "frozen", False))
 
 
+def _resolve_an_toan(p):
+    """`Path.resolve()` nhung KHONG BAO GIO nem.
+
+    Tren Python 3.8, `resolve()` goi `_getfinalpathname()` va nem `OSError
+    [WinError 123]` khi duong dan co ky tu cam (`< > | :` ...). Tren 3.13+
+    thi no tra ve nguyen chuoi, khong nem - nen loi nay CHI LO tren may cu.
+
+    Do that tren CI 2026-09-11: Python 3.14 XANH, Python 3.8 DO voi
+    `OSError: [WinError 123] ... 'ten<cam>|:'`.
+
+    Vi sao PHAI bat: neu nguoi dung cai tool vao mot duong dan la, ham nay
+    nem ngay luc khoi dong - va duoi `pythonw` thi chet IM LANG, dung trieu
+    chung "bam dup khong thay gi" te nhat.
+
+    Khong resolve duoc thi tra ve duong dan NHU CU: no van dung duoc cho
+    `.parent`, chi la khong bung duoc ten ngan 8.3 / lien ket tuong trung.
+    """
+    try:
+        return p.resolve()
+    except (OSError, ValueError, RuntimeError):
+        return p
+
+
 def thu_muc_chuong_trinh() -> Path:
     """Thu muc chua .exe (da dong goi) hoac chua ma nguon (chua dong goi).
 
@@ -55,9 +78,9 @@ def thu_muc_chuong_trinh() -> Path:
     """
     if da_dong_goi():
         # `sys.executable` la duong dan .exe THAT o ca onefile lan onedir.
-        return Path(sys.executable).resolve().parent
+        return _resolve_an_toan(Path(sys.executable)).parent
     # Chua dong goi: file nay nam trong `loi/`, lui mot bac ra goc repo.
-    return Path(__file__).resolve().parent.parent
+    return _resolve_an_toan(Path(__file__)).parent.parent
 
 
 def thu_muc_tai_nguyen() -> Path:
@@ -71,8 +94,8 @@ def thu_muc_tai_nguyen() -> Path:
         mei = getattr(sys, "_MEIPASS", None)
         if mei:
             return Path(mei)
-        return Path(sys.executable).resolve().parent
-    return Path(__file__).resolve().parent.parent
+        return _resolve_an_toan(Path(sys.executable)).parent
+    return _resolve_an_toan(Path(__file__)).parent.parent
 
 
 def cac_thu_muc_tai_nguyen() -> list:
@@ -87,11 +110,11 @@ def cac_thu_muc_tai_nguyen() -> list:
     """
     ra = []
     if da_dong_goi():
-        ra.append(Path(sys.executable).resolve().parent)
+        ra.append(_resolve_an_toan(Path(sys.executable)).parent)
         mei = getattr(sys, "_MEIPASS", None)
         if mei:
             ra.append(Path(mei))
-    ra.append(Path(__file__).resolve().parent.parent)
+    ra.append(_resolve_an_toan(Path(__file__)).parent.parent)
     # Bo trung, giu thu tu
     kq, da = [], set()
     for g in ra:
