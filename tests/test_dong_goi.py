@@ -141,12 +141,16 @@ def test_ff_paths(TU):
             else:
                 sys._MEIPASS = cu_mei
         print(f"  goc tim (gia lam da dong goi): {goc_dg}")
+        # So voi ban DA `.resolve()`: `_cac_goc_ffmpeg()` goi `.resolve()`, ma
+        # tren runner GitHub thu muc TEMP la ten NGAN 8.3 (`RUNNER~1`) nen
+        # `.resolve()` bung ra ten dai (`runneradmin`) - hai ben lech nhau va
+        # bo kiem DO OAN. Tren may phat trien hai ben trung nhau nen khong lo.
         check("da dong goi -> co tim thu muc chua file .exe",
-              os.path.normcase(str(tmp)) in goc_dg,
+              os.path.normcase(str(Path(tmp).resolve())) in goc_dg,
               "neu thieu, ban ffmpeg di kem se khong duoc tim thay va tool lang le"
               " dung mot ffmpeg KHAC trong PATH")
         check("da dong goi -> co tim ca thu muc giai nen tam",
-              os.path.normcase(str(tmp / "giai_nen_tam")) in goc_dg)
+              os.path.normcase(str((tmp / "giai_nen_tam").resolve())) in goc_dg)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 

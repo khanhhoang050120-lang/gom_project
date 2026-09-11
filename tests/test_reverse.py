@@ -48,7 +48,7 @@ def check(ten, dk, chi_tiet=""):
 def main():
     ffmpeg, ffprobe = TU.ff_paths(ROOT)
     if not ffmpeg:
-        print("  (khong co ffmpeg -> bo qua)")
+        print("BO QUA: khong tim thay ffmpeg/ffprobe - bo kiem nay can ma hoa media that")
         return 2
 
     from draft_gia import tao_draft_gia

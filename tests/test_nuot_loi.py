@@ -251,7 +251,7 @@ def main():
     import toi_uu_dung_luong as TU
     ffmpeg, ffprobe = TU.ff_paths(ROOT)
     if not ffmpeg:
-        print("KHONG tim thay ffmpeg -> bo qua")
+        print("BO QUA: khong tim thay ffmpeg/ffprobe - bo kiem nay can ma hoa media that")
         return 2
     test_copy_that_bai(ffmpeg, ffprobe)
     test_ghi_json_khi_copy_fail(ffmpeg, ffprobe)

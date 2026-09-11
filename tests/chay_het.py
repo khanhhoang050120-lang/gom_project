@@ -20,6 +20,17 @@ import sys
 import time
 from pathlib import Path
 
+# ÉP UTF-8 NGAY ĐÂY — bug #105 tái diễn ở chính bộ chạy test.
+# `subprocess.run(errors="replace")` biến ký tự lạ thành `\ufffd`; in nó ra
+# console CI (cp1252) thì `charmap` ném và CẢ BỘ CHẠY chết với "LOI CHAY:
+# UnicodeEncodeError" — trong khi bộ kiểm con thật ra đã ĐẠT.
+try:
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from loi.bang_ma import ep_utf8 as _ep_utf8
+    _ep_utf8()
+except Exception:
+    pass
+
 HERE = Path(__file__).resolve().parent
 
 # (ten hien thi, ten file, gioi han giay)

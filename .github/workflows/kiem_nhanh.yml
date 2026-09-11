@@ -10,9 +10,23 @@
 #   Neu sau nay co bo kiem BAT BUOC phai co ffmpeg that, luc do moi tach.
 #   Dung tach truoc khi can.
 #
-# MAX_BO_QUA=0: tren runner sach hien KHONG bo nao duoc phep bo qua. Neu mot
-# ngay nao do co bo bat dau bo qua, CI se DO va bat phai giai thich - thay vi
-# lang le tut so bo chay that (nhom C trong bug.md).
+# MAX_BO_QUA=7: dung bang so bo THAT SU can ffmpeg de chay.
+#
+#   Ghi chu cu noi "MAX_BO_QUA=0, da do 43/43 DAT khi khong co ffmpeg".
+#   Con so do DA LAC HAU: lan chay CI that 2026-09-11 co 6 bo bo qua va CI DO.
+#   Nguyen nhan: tu lan do do den nay da them bo kiem moi, va mot so bo cu
+#   (A7, DEM, #38, NUOT LOI, REVERSE) von VAN CAN ffmpeg - phep do cu dem
+#   nham vi luc do may do co ffmpeg trong PATH.
+#
+#   Do lai 2026-09-11 bang cach giau CA thu muc ffmpeg/ LAN ffmpeg trong PATH:
+#   dung 7 bo bo qua, 0 bo that bai. Nen nguong la 7.
+#
+# Vi sao van giu mot nguong thay vi bo han: nguong chan duoc kieu hong
+# "lang le tut so bo chay that" (nhom C trong bug.md). Neu mot ngay nao do
+# co bo thu 8 bo qua, CI se DO va bat phai giai thich.
+#
+# Moi bo bo qua VAN phai tu khai ly do (dong bat dau bang "BO QUA:"), nen
+# khong the giau mot bo hong duoi vo boc "bo qua".
 
 name: Kiem thu
 
@@ -60,9 +74,10 @@ jobs:
       - name: Chay toan bo bo kiem
         shell: bash
         env:
-          # Runner sach: khong bo nao duoc phep bo qua (do thuc nghiem
-          # 2026-09-11: 43/43 DAT khi khong co ffmpeg).
-          MAX_BO_QUA: "0"
+          # Runner sach KHONG co ffmpeg -> dung 7 bo khong chay duoc.
+          # Do that 2026-09-11 (giau ca thu muc ffmpeg/ lan ffmpeg trong PATH):
+          # 7 bo qua, 0 that bai. Moi bo deu tu khai ly do.
+          MAX_BO_QUA: "7"
         run: python tests/chay_het.py
 
       - name: Giu lai bao cao khi that bai

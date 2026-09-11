@@ -26,7 +26,19 @@ TU = G.import_toi_uu()
 
 US = TU.US
 ffmpeg, ffprobe = TU.ff_paths()
-assert ffmpeg and ffprobe, "khong tim thay ffmpeg"
+if not (ffmpeg and ffprobe):
+    # BO QUA CO KHAI LY DO, khong `assert` chet giua chung.
+    #
+    # `assert` nem AssertionError -> ma thoat 1 -> `chay_het.py` doc la THAT
+    # BAI, trong khi su that la bo kiem nay KHONG CHAY DUOC vi may thieu
+    # ffmpeg. Bao "that bai" cho mot bo chua chay la bao cao sai.
+    #
+    # Ma thoat 2 = BO QUA (quy uoc cua `chay_het.py`), va dong duoi day la
+    # "ly do khai bao" ma quy tac "bo qua phai on ao" doi hoi.
+    print("KET QUA: 0 PASS / 0 FAIL")
+    print("  BO QUA: khong tim thay ffmpeg/ffprobe"
+          " - bo kiem nay can ma hoa media that")
+    sys.exit(2)
 
 pas = fail = 0
 

@@ -2100,6 +2100,45 @@ _ve_tat_ca()  <-------------------------  _chon_muc()
   - **Cờ chống tái nhập không cứu được sự kiện GỬI TRỄ.** Nó chỉ chặn được đệ quy đồng bộ. Tk xếp sự kiện vào hàng đợi và xử lý ở `update()`/`mainloop()`, lúc đó cờ đã tắt. Cách duy nhất chắc chắn là **không tạo ra vòng**.
   - **Treo có mã thoát 124 và KHÔNG một dòng lỗi** — khác hẳn crash. Khi một script GUI "chạy mãi không xong", nghi vòng lặp sự kiện trước khi nghi I/O chậm. Cách chẩn đoán nhanh nhất: bọc các hàm nghi ngờ bằng bộ đếm ném khi vượt ngưỡng.
 
+### 107. CI đỏ 4 bộ trong khi máy phát triển 47/47 ĐẠT — bốn lỗi, bốn nguyên nhân khác nhau
+- **Ngày:** 2026-09-11
+- **Mức độ:** 🔴 High (CI đỏ ngay lần chạy đầu của bản phát hành v2.0.0)
+- **Vị trí:** `tests/chay_het.py`, `tests/test_duong_dan.py`, `tests/test_dong_goi.py`, `tests/test_a7.py`, `.github/workflows/kiem_nhanh.yml`.
+
+**Triệu chứng:** đẩy v2.0.0 lên GitHub, CI báo `CO 4 BO KIEM KHONG DAT`. Trên máy phát triển **47/47 ĐẠT**. Đúng rủi ro **R-05** đã ghi sẵn trong `tai_lieu/RISK.md`.
+
+**Bốn nguyên nhân KHÁC NHAU — không có nguyên nhân chung:**
+
+| Bộ | Nguyên nhân |
+|---|---|
+| `DUONG DAN` | Runner **bật sẵn LongPathsEnabled** → `os.path.isfile` cũng thấy file dài → phép **đối chiếu** (chứng minh `_lp()` có tác dụng) mất ý nghĩa. `_lp()` không hỏng. |
+| `A7` | `assert ffmpeg` → `AssertionError` → mã thoát 1 → đọc là **THẤT BẠI**, trong khi sự thật là **không chạy được** vì máy thiếu ffmpeg |
+| `DONG GOI` | So `str(tmp)` với đường dẫn đã `.resolve()`. Runner có `TEMP` là tên **ngắn 8.3** (`RUNNER~1`), `.resolve()` bung thành `runneradmin` → hai bên lệch |
+| `QUET THU` | **bug #105 tái diễn ở chính bộ chạy test.** `subprocess.run(errors="replace")` biến ký tự lạ thành `\ufffd`; in ra console CI (cp1252) thì `charmap` ném → **cả bộ chạy chết**, dù bộ kiểm con đã ĐẠT |
+
+**Một lỗi thứ năm, âm thầm hơn:** `MAX_BO_QUA=0` trong CI dựa trên ghi chú *"đã đo 2026-09-11: 43/43 ĐẠT khi không có ffmpeg"*. Con số đó **sai ngay từ đầu**: phép đo cũ chỉ giấu thư mục `ffmpeg/`, mà máy đo **có ffmpeg trong PATH** — nên `ff_paths()` vẫn tìm thấy và không bộ nào bỏ qua.
+
+**Cách sửa:**
+
+1. `chay_het.py` gọi `ep_utf8()` ngay đầu file.
+2. `test_duong_dan.py`: phép đối chiếu chỉ **ghi nhận**, không chặn khi máy bật long path.
+3. `test_dong_goi.py`: so với `Path(tmp).resolve()`.
+4. `test_a7.py`: **bỏ qua có khai lý do** (mã thoát 2) thay vì `assert` chết.
+5. Bốn bộ bỏ qua im lặng (`DEM`, `#38`, `NUOT LOI`, `REVERSE`) đổi sang khuôn `BO QUA: <lý do>`.
+6. `MAX_BO_QUA` 0 → **7**, kèm cách đo đúng.
+
+- **Cách kiểm chứng:** giả lập runner bằng cách giấu **CẢ** thư mục `ffmpeg/` **LẪN** ffmpeg trong PATH:
+  ```
+  mv ffmpeg ffmpeg_tam && PATH="$(echo "$PATH" | tr ':' 
+' | grep -vi ffmpeg | paste -sd:)" python tests\chay_het.py
+  ```
+  Trước khi sửa: 4 THẤT BẠI + 1 LỖI CHẠY. Sau khi sửa: **`TAT CA DAT` (7 bộ bỏ qua, trong ngưỡng)**, và máy đầy đủ vẫn 47/47.
+- **Bài học:**
+  - **Giấu một nguồn tài nguyên là chưa đủ để mô phỏng máy sạch.** Giấu thư mục `ffmpeg/` mà quên ffmpeg trong PATH thì phép đo ra kết quả **ngược hẳn** — và con số sai đó đi thẳng vào cấu hình CI. Muốn mô phỏng máy thiếu thứ gì, phải chặn **mọi đường** nó có thể đến.
+  - **"Phép đối chiếu" khác "phép kiểm".** Một dòng chứng minh *"không có X thì hỏng"* phụ thuộc vào môi trường; biến nó thành điều kiện bắt buộc là làm CI đỏ oan ở nơi môi trường khác.
+  - **`assert` trong bộ kiểm là bẫy:** nó không phân biệt được *"chạy và sai"* với *"không chạy được"*. Bộ kiểm cần bỏ qua thì phải bỏ qua có khai lý do, không dùng `assert`.
+  - **Bug đã sửa ở lõi vẫn sống trong công cụ.** #105 đã vá ở ba điểm vào của tool, nhưng `chay_het.py` — thứ chạy *quanh* tool — thì chưa. Khi sửa một lớp lỗi, phải hỏi *"còn chỗ nào cùng loại mà tôi chưa nghĩ tới?"*
+
 ---
 
 ## Checklist nhanh khi viết/sửa code (rút ra từ các bug trên)

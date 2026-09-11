@@ -121,9 +121,24 @@ def test_duong_dan_dai():
         except OSError:
             khong_lp = False
         print(f"  os.path.isfile KHONG qua _lp -> {khong_lp}")
-        check("neu KHONG qua _lp thi khong thay file (chung minh _lp co tac dung)",
-              khong_lp is False,
-              "may nay co the da bat LongPathsEnabled -> phep doi chieu mat y nghia")
+        # Phep DOI CHIEU, khong phai phep kiem bat buoc.
+        #
+        # Y dinh: chung minh `_lp()` that su cuu duoc duong dan dai. Nhung tren
+        # may DA BAT LongPathsEnabled (runner GitHub bat san), `os.path.isfile`
+        # cung thay file -> phep doi chieu MAT Y NGHIA, khong phai `_lp()` hong.
+        #
+        # Do that tren CI 2026-09-11: bo kiem nay DO tren runner trong khi may
+        # phat trien DAT. Bien mot phep doi chieu moi truong thanh phep kiem
+        # bat buoc la lam CI do oan (R-05).
+        #
+        # Dieu THAT SU quan trong - `_lp()` co lam duoc viec khong - da duoc
+        # ba phep kiem ngay TREN kia chot roi.
+        if khong_lp is False:
+            check("neu KHONG qua _lp thi khong thay file"
+                  " (chung minh _lp co tac dung)", True)
+        else:
+            print("  (i) may nay DA BAT LongPathsEnabled - phep doi chieu bo qua,"
+                  " khong phai loi")
 
         # iter_json_files phai di duoc vao duong dan dai
         Path(C._lp(sau / "draft_content.json")).write_text("{}", encoding="utf-8")

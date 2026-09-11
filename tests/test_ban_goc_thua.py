@@ -51,7 +51,7 @@ def main():
 
     ffmpeg, ffprobe = TU.ff_paths(HERE.parent)
     if not ffmpeg:
-        print("KHONG tim thay ffmpeg -> bo qua")
+        print("BO QUA: khong tim thay ffmpeg/ffprobe - bo kiem nay can ma hoa media that")
         return 2
 
     tmp = Path(tempfile.mkdtemp(prefix="goc_thua_"))
