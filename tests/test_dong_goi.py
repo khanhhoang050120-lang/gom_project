@@ -126,8 +126,12 @@ def test_ff_paths(TU):
         cu_mei = getattr(sys, "_MEIPASS", None)
         cu_exe = sys.executable
         sys.frozen = True
-        sys._MEIPASS = str(tmp / "giai_nen_tam")
-        sys.executable = str(tmp / "GoiProject.exe")
+        # Dat bang duong dan DA resolve: `_cac_goc_ffmpeg()` goi `.resolve()`
+        # tren `sys.executable`, nen neu o day dua vao ten ngan thi hai ben
+        # lech nhau tren runner (TEMP la `RUNNER~1`).
+        _tmp_that = Path(tmp).resolve()
+        sys._MEIPASS = str(_tmp_that / "giai_nen_tam")
+        sys.executable = str(_tmp_that / "GoiProject.exe")
         try:
             goc_dg = [os.path.normcase(str(x)) for x in TU._cac_goc_ffmpeg()]
         finally:
@@ -149,8 +153,12 @@ def test_ff_paths(TU):
               os.path.normcase(str(Path(tmp).resolve())) in goc_dg,
               "neu thieu, ban ffmpeg di kem se khong duoc tim thay va tool lang le"
               " dung mot ffmpeg KHAC trong PATH")
+        # `.resolve()` tren mot thu muc CHUA TON TAI khong bung duoc ten ngan
+        # 8.3 (`RUNNER~1` -> `runneradmin`), nen phai resolve THU MUC CHA roi
+        # moi noi ten con vao.
         check("da dong goi -> co tim ca thu muc giai nen tam",
-              os.path.normcase(str((tmp / "giai_nen_tam").resolve())) in goc_dg)
+              os.path.normcase(str(Path(tmp).resolve() / "giai_nen_tam"))
+              in goc_dg)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 

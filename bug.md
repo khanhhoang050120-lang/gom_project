@@ -2139,6 +2139,29 @@ _ve_tat_ca()  <-------------------------  _chon_muc()
   - **`assert` trong bộ kiểm là bẫy:** nó không phân biệt được *"chạy và sai"* với *"không chạy được"*. Bộ kiểm cần bỏ qua thì phải bỏ qua có khai lý do, không dùng `assert`.
   - **Bug đã sửa ở lõi vẫn sống trong công cụ.** #105 đã vá ở ba điểm vào của tool, nhưng `chay_het.py` — thứ chạy *quanh* tool — thì chưa. Khi sửa một lớp lỗi, phải hỏi *"còn chỗ nào cùng loại mà tôi chưa nghĩ tới?"*
 
+**Lần sửa thứ hai (cùng ngày) — hai lỗi còn sót, cả hai là "sửa chưa tới nơi":**
+
+| Bộ | Tôi đã sửa gì | Vì sao vẫn đỏ |
+|---|---|---|
+| `QUET THU` | `chay_het.py` gọi `ep_utf8()` | Chỉ sửa tiến trình **CHA**. Tiến trình **CON** tự in tiếng Việt và chết *trước* khi cha kịp làm gì |
+| `DONG GOI` | Phép kiểm thứ nhất: `str(tmp)` → `Path(tmp).resolve()` | Phép kiểm thứ **HAI** vẫn so `(tmp / "giai_nen_tam")` với bản đã resolve. `.resolve()` trên thư mục **chưa tồn tại** không bung được tên ngắn 8.3 |
+
+**Cách sửa lần hai:**
+- `chay_het.py` truyền `PYTHONIOENCODING=utf-8:replace` xuống **mọi tiến trình con**. Đo được **15 file test** có chữ có dấu mà không gọi `ep_utf8()` — sửa ở một chỗ bảo vệ cả 15 file lẫn mọi file viết sau, thay vì thêm một dòng boilerplate vào từng file.
+- `test_dong_goi.py`: resolve **thư mục CHA** rồi mới nối tên con, và đặt `sys._MEIPASS`/`sys.executable` bằng đường dẫn đã resolve.
+
+**Kiểm chứng lần hai** — tái hiện lỗi trước, rồi chứng minh cách sửa:
+```
+PYTHONIOENCODING=cp1252 python tests\test_quet_thu.py   -> UnicodeEncodeError (tai hien dung loi CI)
+PYTHONIOENCODING=cp1252 python tests\chay_het.py        -> ca hai bo DAT
++ giau ffmpeg + MAX_BO_QUA=7                        -> TAT CA DAT (7 bo qua)
+may thuong                                          -> 47/47 DAT
+```
+
+**Bài học bổ sung — hai cái, đều về "sửa chưa tới nơi":**
+  - **Sửa biến môi trường ở tiến trình cha KHÔNG chạm được tiến trình con.** `sys.stdout.reconfigure()` chỉ sống trong tiến trình gọi nó. Muốn con thừa hưởng thì phải truyền qua `env`.
+  - **Sửa một nửa rồi tưởng xong là chính cái bẫy mục này cảnh báo.** Tôi sửa phép kiểm thứ nhất của `DONG GOI` mà bỏ qua phép kiểm thứ hai ngay dưới nó — trong cùng một hàm, cùng một loại lỗi. Khi sửa một chỗ, **grep cả file** xem còn chỗ nào cùng dạng.
+
 ---
 
 ## Checklist nhanh khi viết/sửa code (rút ra từ các bug trên)

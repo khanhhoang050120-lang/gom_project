@@ -138,8 +138,18 @@ def main():
         t1 = time.monotonic()
         ly_do = ""
         try:
+            # PYTHONIOENCODING cho TIEN TRINH CON. `ep_utf8()` o dau file nay
+            # chi sua tien trinh CHA; con tu in tieng Viet va CHET truoc khi
+            # cha kip lam gi (do that tren CI: `test_quet_thu.py` chet ngay
+            # dong `print` dau tien voi cp1252).
+            #
+            # Sua o day chu khong sua 15 file test: mot cho, va bao ve ca file
+            # test viet SAU nay - khong ai phai nho them mot dong boilerplate.
+            moi_truong = dict(os.environ)
+            moi_truong["PYTHONIOENCODING"] = "utf-8:replace"
             r = subprocess.run([sys.executable, "-u", str(duong)],
                                cwd=str(HERE.parent), timeout=gioi_han,
+                               env=moi_truong,
                                capture_output=True, text=True, encoding="utf-8", errors="replace")
             ra = r.stdout or ""
             # Chi in dong ket qua + cac dong FAIL, tranh ngap man hinh
