@@ -113,6 +113,45 @@ class DangBanKhongCapNhat(RuntimeError):
 
 
 # ------------------------------------------------------------------ hoi server
+def _tim_url_tai(d):
+    """Tim URL tai ban moi trong JSON tra ve. None neu khong co.
+
+    GitHub Releases API dat `browser_download_url` trong MANG `assets[]`,
+    KHONG phai cap cao nhat. Do tren API that cua chinh repo nay
+    (2026-09-11): `d["browser_download_url"]` la None, con `d["assets"]` la
+    mot mang.
+
+    Doc nham cho -> auto-update THAY ban moi nhung khong tai duoc gi, va
+    khong bao loi. Nguoi dung bam "Cap nhat" roi khong co chuyen gi xay ra.
+
+    Van chap nhan khoa `url_tai` o cap cao nhat: mot may chu tu dung (khong
+    phai GitHub) co the tra thang khoa do, va bo kiem dang dung dang nay.
+
+    Chon asset .zip dau tien. Neu sau nay co nhieu asset (vd them ban ARM),
+    cho nay phai chon theo kien truc - nhung dung them truoc khi can.
+    """
+    if not isinstance(d, dict):
+        return None
+    thang = d.get("url_tai") or d.get("browser_download_url")
+    if thang:
+        return thang
+    cac_asset = d.get("assets")
+    if not isinstance(cac_asset, list):
+        return None
+    for a in cac_asset:
+        if not isinstance(a, dict):
+            continue
+        ten = str(a.get("name") or "")
+        u = a.get("browser_download_url")
+        if u and ten.lower().endswith(".zip"):
+            return u
+    # Khong co .zip nao: tra asset dau tien co URL, con hon khong tra gi.
+    for a in cac_asset:
+        if isinstance(a, dict) and a.get("browser_download_url"):
+            return a["browser_download_url"]
+    return None
+
+
 def hoi_ban_moi(url: str, phien_ban_dang_dung: str, mo_url=None):
     """Hoi may chu xem co ban moi khong. KHONG BAO GIO NEM (R-10).
 
@@ -132,7 +171,7 @@ def hoi_ban_moi(url: str, phien_ban_dang_dung: str, mo_url=None):
         if not moi_hon(pb, phien_ban_dang_dung):
             return None
         return {"phien_ban": pb,
-                "url_tai": d.get("url_tai") or d.get("browser_download_url"),
+                "url_tai": _tim_url_tai(d),
                 "sha256": d.get("sha256"),
                 "ghi_chu": d.get("body") or d.get("ghi_chu") or ""}
     except Exception:

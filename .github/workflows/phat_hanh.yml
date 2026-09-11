@@ -1,0 +1,121 @@
+# Dong goi .exe va dinh kem vao GitHub Release.
+#
+# Chay khi: day mot tag dang `v*` (vd `git push origin v2.0.1`).
+# Chay tay: nut "Run workflow" o tab Actions, nhap tag muon dong goi.
+#
+# VI SAO CAN WORKFLOW NAY
+#   Release v2.0.0 chi co "Source code (zip/tar.gz)" - hai file GitHub TU
+#   TAO, khong phai thu nguoi dung chay duoc. Va `loi/cap_nhat.py` doc
+#   Releases API de tim ban moi: release khong co file .exe dinh kem thi
+#   auto-update KHONG CO GI DE TAI - tinh nang tu cap nhat thanh vo dung.
+#
+# VI SAO PHAI TAI ffmpeg
+#   `ffmpeg/` KHONG nam trong repo (.gitignore): hai file 98 MB + 97 MB,
+#   vuot gioi han GitHub. Nhung ban .exe BAT BUOC phai co ffmpeg di kem -
+#   thieu no thi che do 4 (toi uu dung luong) tu ha xuong che do 1 tren may
+#   nguoi dung, ma ho khong hieu vi sao goi khong nho di.
+#
+#   `dong_goi/build.py` da chan san truong hop nay (buoc 2 tra ve False khi
+#   thieu ffmpeg), nen neu buoc tai o duoi hong thi build DUNG HAN chu khong
+#   lang le dong goi mot ban thieu.
+#
+# GHIM DUNG BAN ffmpeg dang dung tren may phat trien (8.1.2-essentials,
+# gyan.dev). Khong dung "latest": mot ban ffmpeg khac co the doi tham so
+# dong lenh, va ban .exe phat hanh se khac ban da kiem thu.
+
+name: Phat hanh .exe
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag muon dong goi (vd v2.0.0)"
+        required: true
+
+permissions:
+  contents: write        # can de dinh kem file vao Release
+
+jobs:
+  dong-goi:
+    name: Dong goi .exe tren Windows
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Lay ma nguon
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Cai Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Cai PyInstaller
+        shell: bash
+        run: |
+          # GHIM ban: PyInstaller la cong cu BUILD chu khong phai dependency
+          # CHAY - san pham van chi dung thu vien chuan (tests/
+          # test_khong_dependency.py chot dieu do moi lan CI chay).
+          python -m pip install --upgrade pip
+          python -m pip install pyinstaller==6.22.2
+          python -m PyInstaller --version
+
+      - name: Tai ffmpeg di kem
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://github.com/GyanD/codexffmpeg/releases/download/8.1.2/ffmpeg-8.1.2-essentials_build.zip"
+          echo "Tai $URL"
+          curl -fsSL --retry 3 --retry-delay 5 -o ff.zip "$URL"
+          unzip -q ff.zip
+          mkdir -p ffmpeg/bin
+          # Thu muc trong zip co ten dai; tim file thay vi doan ten.
+          find . -name "ffmpeg.exe"  -path "*/bin/*" -exec cp {} ffmpeg/bin/ \;
+          find . -name "ffprobe.exe" -path "*/bin/*" -exec cp {} ffmpeg/bin/ \;
+          rm -rf ff.zip ffmpeg-*-essentials_build
+          # KIEM CHUNG thay vi tin: thieu ffmpeg thi build se dung han o buoc 2,
+          # nhung bao ro o day thi de tim nguyen nhan hon.
+          test -f ffmpeg/bin/ffmpeg.exe  || { echo "THIEU ffmpeg.exe"; exit 1; }
+          test -f ffmpeg/bin/ffprobe.exe || { echo "THIEU ffprobe.exe"; exit 1; }
+          ./ffmpeg/bin/ffmpeg.exe -version | head -1
+
+      - name: Dong goi
+        shell: bash
+        run: |
+          # KHONG dung `--bo-qua-kiem`: cong kiem phai dung TRUOC khi build.
+          # Dong goi mot ban da hong roi phat hanh cho 40-50 nguoi la kieu
+          # hong ton kem nhat - ho tro tung may mot.
+          python dong_goi/build.py
+
+      - name: Nen ban .exe
+        shell: bash
+        run: |
+          set -euo pipefail
+          TEN="GoiProjectCapCut-${{ github.event.inputs.tag || github.ref_name }}-windows"
+          cd dist
+          7z a -tzip -mx=5 "../$TEN.zip" GoiProjectCapCut
+          cd ..
+          ls -lh "$TEN.zip"
+          echo "TEN_GOI=$TEN" >> "$GITHUB_ENV"
+
+      - name: Dinh kem vao Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          files: ${{ env.TEN_GOI }}.zip
+          fail_on_unmatched_files: true
+
+      - name: Giu lai ban build khi that bai
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-that-bai
+          path: |
+            dist/
+            build/
+          retention-days: 7

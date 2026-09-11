@@ -2193,6 +2193,43 @@ Sửa: `_tap_module_chuan()` — dùng `sys.stdlib_module_names` khi có, còn 3
   - **Một bộ kiểm tự vi phạm điều nó cấm là điểm mù kinh điển.** Nó liệt kê `stdlib_module_names` là API cần 3.10 rồi tự gọi — và chỉ lộ khi CI chạy trên đúng bản Python đó. Khi viết bộ kiểm về "không được dùng X", hỏi ngay: *"chính tôi có đang dùng X không?"*
   - **`resolve()` là hàm có thể NÉM**, không phải phép biến đổi chuỗi thuần. Mọi chỗ gọi nó trên đường dẫn đến từ bên ngoài (`sys.executable`, đối số người dùng) đều cần đường lui.
 
+### 109. Auto-update đọc `browser_download_url` sai chỗ — thấy bản mới nhưng không tải được gì
+- **Ngày:** 2026-09-11
+- **Mức độ:** 🔴 High (tính năng tự cập nhật vô dụng, và **không báo lỗi**)
+- **Vị trí:** `loi/cap_nhat.py` — `hoi_ban_moi()`.
+
+**Triệu chứng:** chưa lộ ra, vì release v2.0.0 chưa có file .exe nào đính kèm. Phát hiện khi dựng workflow build và đi kiểm xem auto-update tìm file ở đâu.
+
+**Nguyên nhân gốc:** code đọc
+
+```python
+"url_tai": d.get("url_tai") or d.get("browser_download_url")
+```
+
+nhưng GitHub Releases API đặt `browser_download_url` **trong mảng `assets[]`**, không phải cấp cao nhất.
+
+**Đo trên API thật** của chính repo này:
+
+```
+tag_name                            : v2.0.0
+browser_download_url o cap cao nhat : None
+so asset                            : 0
+```
+
+Hậu quả: người dùng bấm "Cập nhật", tool **thấy** bản mới, nhưng `url_tai` là `None` → không tải được gì và **không báo lỗi**. Đúng loại "hỏng im lặng" tệ nhất.
+
+**Vì sao bộ kiểm không bắt được:** `test_cap_nhat.py` dùng JSON **tự chế** — `{"tag_name": "1.2.0", "url_tai": "http://x/a.zip"}` — chứ không dùng dạng thật của GitHub. Nó kiểm đúng cái nó tự bịa ra.
+
+**Cách sửa:** `_tim_url_tai()` đọc được **cả hai dạng**: khoá `url_tai` ở cấp cao nhất (cho máy chủ tự dựng, và cho bộ kiểm cũ) **và** mảng `assets[]` của GitHub. Chọn asset `.zip` đầu tiên.
+
+- **Cách kiểm chứng:**
+  - 3 phép kiểm mới dùng **dạng JSON thật của GitHub**: đọc được URL từ `assets[]`, release rỗng → `None` không ném, nhiều asset → chọn `.zip`
+  - Chạy thật trên `api.github.com` của repo này: trả `None` đúng như mong đợi (release chưa có asset)
+  - `tests\test_cap_nhat.py` 46/46 PASS (tăng từ 43)
+- **Bài học:**
+  - **Bộ kiểm dùng dữ liệu tự chế chỉ kiểm được trí tưởng tượng của người viết.** JSON giả `{"url_tai": ...}` khớp hoàn hảo với code sai, vì cả hai do cùng một người nghĩ ra. Khi code đọc dữ liệu từ một API bên ngoài, **phải lấy một mẫu thật** — dù chỉ một lần, dù phải `curl` bằng tay.
+  - **Một tính năng "đã viết xong" mà chưa bao giờ chạy hết đường thì chưa xong.** `cap_nhat.py` có 43 phép kiểm, tất cả đều xanh, nhưng cả chuỗi *"hỏi API → tìm URL → tải về"* chưa lần nào chạy trên dữ liệu thật. Bug nằm đúng ở mắt xích không ai đi qua.
+
 ---
 
 ## Checklist nhanh khi viết/sửa code (rút ra từ các bug trên)

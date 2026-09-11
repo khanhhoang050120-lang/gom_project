@@ -47,6 +47,7 @@ Ky thuat gia lap - thu vien chuan thuan:
 """
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -451,6 +452,43 @@ def test_khong_chan_khoi_dong():
 
     # Truong hop CO ban moi that
     good = _Gia(noi_dung=b'{"tag_name": "1.2.0", "url_tai": "http://x/a.zip"}')
+
+    # --- dang JSON THAT cua GitHub Releases API ---
+    # `browser_download_url` nam trong MANG `assets[]`, KHONG phai cap cao
+    # nhat. Do tren API that cua repo nay 2026-09-11: cap cao nhat la None.
+    # Doc nham cho -> auto-update THAY ban moi nhung khong tai duoc gi.
+    that = _Gia(noi_dung=json.dumps({
+        "tag_name": "v2.0.1",
+        "body": "ghi chu",
+        "assets": [
+            {"name": "GoiProjectCapCut-v2.0.1-windows.zip",
+             "browser_download_url": "http://x/goi.zip"},
+        ],
+    }).encode("utf-8"))
+    kq = CN.hoi_ban_moi("http://x", "2.0.0", mo_url=that)
+    check("doc duoc URL tu mang `assets[]` (dang GitHub that)",
+          kq is not None and kq["url_tai"] == "http://x/goi.zip",
+          kq)
+
+    # Release KHONG co asset nao -> url_tai la None, KHONG duoc nem
+    rong = _Gia(noi_dung=json.dumps({
+        "tag_name": "v2.0.1", "assets": [],
+    }).encode("utf-8"))
+    kq = CN.hoi_ban_moi("http://x", "2.0.0", mo_url=rong)
+    check("release khong co asset -> url_tai None, khong nem",
+          kq is not None and kq["url_tai"] is None, kq)
+
+    # Nhieu asset -> chon .zip
+    nhieu = _Gia(noi_dung=json.dumps({
+        "tag_name": "v2.0.1",
+        "assets": [
+            {"name": "ghi_chu.txt", "browser_download_url": "http://x/a.txt"},
+            {"name": "goi.zip", "browser_download_url": "http://x/b.zip"},
+        ],
+    }).encode("utf-8"))
+    kq = CN.hoi_ban_moi("http://x", "2.0.0", mo_url=nhieu)
+    check("nhieu asset -> chon file .zip",
+          kq is not None and kq["url_tai"] == "http://x/b.zip", kq)
     kq = CN.hoi_ban_moi("http://x", "1.1.0", mo_url=good)
     check("CN-06 co ban moi that -> tra thong tin",
           kq is not None and kq.get("phien_ban") == "1.2.0", kq)

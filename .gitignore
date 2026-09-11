@@ -12,3 +12,8 @@ __pycache__/
 
 # Log loi giao dien (sinh ra khi chay/kiem thu)
 _LOI_GIAO_DIEN.log
+
+# Ban .exe dong goi ra (227 MB) - KHONG dua vao repo, CI tu build
+dist/
+build/
+*.spec.bak
