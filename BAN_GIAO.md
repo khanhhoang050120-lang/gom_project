@@ -1,6 +1,6 @@
 # GÓI PROJECT CAPCUT — Tài liệu bàn giao
 
-**Phiên bản 2.0.0** · Python 3.14.6 đi kèm · ffmpeg đi kèm
+**Phiên bản 2.0.1** · Python 3.14.6 đi kèm · ffmpeg đi kèm
 
 Tài liệu này dành cho **người nhận công cụ**. Cách chạy từng bước xem
 `HUONG_DAN_GOI_PROJECT.md`. Ở đây chỉ nói ba việc:

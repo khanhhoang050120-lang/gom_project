@@ -107,7 +107,7 @@ except ImportError as _ex:
 # So hieu phien ban. TANG khi phat hanh ban moi cho nguoi dung khac.
 # Muc dich: khi nguoi dung gui _BAO_CAO_THIEU.txt ve, biet duoc ho chay ban NAO.
 # Khong co so nay thi moi bao loi tu may khac deu khong the truy nguyen.
-TOOL_VERSION = "2.0.0"
+TOOL_VERSION = "2.0.1"
 
 
 
